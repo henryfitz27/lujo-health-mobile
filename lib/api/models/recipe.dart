@@ -174,6 +174,7 @@ class Recipe {
     required this.nutrition,
     required this.nutritionSource,
     required this.nutritionBasis,
+    required this.healthClaims,
     required this.removedReason,
     required this.ratingsCount,
     required this.clarityAvg,
@@ -223,6 +224,7 @@ class Recipe {
       ),
       nutritionSource: json['nutritionSource'] as String? ?? '',
       nutritionBasis: json['nutritionBasis'] as String? ?? '',
+      healthClaims: json['healthClaims'] as String? ?? '',
       removedReason: json['removedReason'] as String? ?? '',
       ratingsCount: json['ratingsCount'] as int? ?? 0,
       clarityAvg: (json['clarityAvg'] as num?)?.toDouble() ?? 0,
@@ -266,6 +268,7 @@ class Recipe {
   final Map<String, double>? nutrition;
   final String nutritionSource;
   final String nutritionBasis;
+  final String healthClaims;
   final String removedReason;
   final int ratingsCount;
   final double clarityAvg;

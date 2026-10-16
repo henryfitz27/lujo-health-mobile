@@ -7,6 +7,7 @@ import '../../api/api_client.dart';
 import '../../api/models/post.dart';
 import '../../app/router.dart';
 import '../../config/env.dart';
+import '../posts/create_post_screen.dart';
 import 'comments_sheet.dart';
 
 /// Reacción, comentarios, guardar, compartir y menú (me interesa, ver menos, ocultar,
@@ -83,12 +84,32 @@ class _PostActionsState extends ConsumerState<PostActions> {
 
   Future<void> _menu() async {
     final post = widget.post;
+    final me = ref.read(meProvider).value;
+    final isOwner = me != null && me.id == post.author.id;
     final action = await showModalBottomSheet<String>(
       context: context,
       builder: (context) => SafeArea(
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
+            if (isOwner) ...[
+              ListTile(
+                leading: const Icon(Icons.edit_outlined),
+                title: const Text('Editar publicación'),
+                onTap: () => Navigator.pop(context, 'edit'),
+              ),
+              ListTile(
+                leading: const Icon(Icons.archive_outlined),
+                title: const Text('Archivar'),
+                onTap: () => Navigator.pop(context, 'archive'),
+              ),
+              ListTile(
+                leading: const Icon(Icons.delete_outline),
+                title: const Text('Eliminar'),
+                onTap: () => Navigator.pop(context, 'delete'),
+              ),
+              const Divider(),
+            ],
             ListTile(
               leading: Icon(
                 post.viewer.signal == 'interested'
@@ -129,6 +150,56 @@ class _PostActionsState extends ConsumerState<PostActions> {
     );
     if (!mounted || action == null) return;
     switch (action) {
+      case 'edit':
+        final updated = await Navigator.of(context).push<Post>(
+          MaterialPageRoute(builder: (_) => CreatePostScreen(existing: post)),
+        );
+        if (updated != null) widget.onChanged(updated);
+      case 'archive':
+        try {
+          await ref.read(apiClientProvider).archivePost(post.id);
+          widget.onHidden?.call();
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text('Publicación archivada.')),
+            );
+          }
+        } on ApiException catch (e) {
+          if (mounted) {
+            ScaffoldMessenger.of(context)
+                .showSnackBar(SnackBar(content: Text(e.message)));
+          }
+        }
+      case 'delete':
+        final ok = await showDialog<bool>(
+          context: context,
+          builder: (context) => AlertDialog(
+            title: const Text('Eliminar publicación'),
+            content: const Text(
+              'Se borrará definitivamente con sus comentarios y reacciones.',
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context, false),
+                child: const Text('Cancelar'),
+              ),
+              FilledButton(
+                onPressed: () => Navigator.pop(context, true),
+                child: const Text('Eliminar'),
+              ),
+            ],
+          ),
+        );
+        if (ok != true) return;
+        try {
+          await ref.read(apiClientProvider).deletePost(post.id);
+          widget.onHidden?.call();
+        } on ApiException catch (e) {
+          if (mounted) {
+            ScaffoldMessenger.of(context)
+                .showSnackBar(SnackBar(content: Text(e.message)));
+          }
+        }
       case 'interested':
         await _run(
           (api) => api.signal(

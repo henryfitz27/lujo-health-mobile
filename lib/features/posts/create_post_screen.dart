@@ -7,6 +7,7 @@ import 'package:image_picker/image_picker.dart';
 
 import '../../api/api_client.dart';
 import '../../api/models/post.dart';
+import '../feed/post_backgrounds.dart';
 
 /// Crear una publicación: reel (video), fotografía, carrusel o texto breve.
 class CreatePostScreen extends ConsumerStatefulWidget {
@@ -42,6 +43,9 @@ class _CreatePostScreenState extends ConsumerState<CreatePostScreen> {
   late String _comments = widget.existing?.commentsPolicy ?? 'everyone';
   late String _sponsorship = widget.existing?.sponsorship ?? 'none';
   DateTime? _scheduledAt;
+  late String _background = widget.existing?.background.isNotEmpty == true
+      ? widget.existing!.background
+      : PostBackground.random().key;
   final _files = <_PickedFile>[];
   late final List<PostMedia> _existingMedia = widget.existing?.media ?? [];
   bool _saving = false;
@@ -170,6 +174,7 @@ class _CreatePostScreenState extends ConsumerState<CreatePostScreen> {
         'visibility': _visibility,
         'title': _title.text.trim(),
         'body': _body.text.trim(),
+        'background': _type == 'text' ? _background : '',
         'tags': _tags.text
             .split(RegExp(r'[\s,]+'))
             .map((t) => t.trim())
@@ -302,6 +307,33 @@ class _CreatePostScreenState extends ConsumerState<CreatePostScreen> {
               ),
             const SizedBox(height: 16),
             if (_type != 'text') _mediaSection(),
+            if (_type == 'text') ...[
+              Container(
+                height: 140,
+                alignment: Alignment.center,
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  gradient: PostBackground.byKey(_background).gradient,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Text(
+                  _body.text.isEmpty ? 'Así se verá tu texto' : _body.text,
+                  textAlign: TextAlign.center,
+                  maxLines: 4,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    color: PostBackground.byKey(_background).textColor,
+                    fontSize: 18,
+                  ),
+                ),
+              ),
+              const SizedBox(height: 8),
+              BackgroundPicker(
+                selected: _background,
+                onChanged: (k) => setState(() => _background = k),
+              ),
+              const SizedBox(height: 8),
+            ],
             TextFormField(
               controller: _title,
               decoration: const InputDecoration(labelText: 'Título'),
@@ -312,6 +344,7 @@ class _CreatePostScreenState extends ConsumerState<CreatePostScreen> {
               decoration: InputDecoration(
                 labelText: _type == 'text' ? 'Texto' : 'Descripción',
               ),
+              onChanged: (_) => _type == 'text' ? setState(() {}) : null,
               maxLength: _type == 'text' ? 5000 : 2000,
               maxLines: _type == 'text' ? 8 : 4,
               validator: (v) => _type == 'text' && (v ?? '').trim().isEmpty

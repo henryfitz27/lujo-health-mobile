@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:share_plus/share_plus.dart';
+import 'package:video_player/video_player.dart';
 
 import '../../api/api_client.dart';
 import '../../api/models/recipe.dart';
@@ -297,6 +298,17 @@ class _RecipeScreenState extends ConsumerState<RecipeScreen> {
                   const SizedBox(height: 8),
                   Text(r.description),
                 ],
+                if (r.video != null) ...[
+                  const SizedBox(height: 12),
+                  _RecipeVideo(url: r.video!.playbackUrl),
+                ],
+                if (r.healthClaims.isNotEmpty) ...[
+                  const SizedBox(height: 12),
+                  _HealthClaims(
+                    text: r.healthClaims,
+                    approved: r.reviewStatus == 'approved',
+                  ),
+                ],
                 const SizedBox(height: 12),
                 Wrap(
                   spacing: 8,
@@ -510,6 +522,125 @@ class _RecipeScreenState extends ConsumerState<RecipeScreen> {
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+/// «Para qué es buena»: siempre acompañada del estado de revisión profesional.
+class _HealthClaims extends StatelessWidget {
+  const _HealthClaims({required this.text, required this.approved});
+
+  final String text;
+  final bool approved;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    final color = approved ? scheme.primary : scheme.tertiary;
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        border: Border(left: BorderSide(color: color, width: 4)),
+        color: color.withValues(alpha: 0.06),
+        borderRadius: BorderRadius.circular(6),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(
+                approved ? Icons.verified_outlined : Icons.hourglass_top,
+                size: 18,
+                color: color,
+              ),
+              const SizedBox(width: 6),
+              Text(
+                'Para qué es buena',
+                style: Theme.of(context).textTheme.titleMedium,
+              ),
+            ],
+          ),
+          const SizedBox(height: 6),
+          Text(text),
+          const SizedBox(height: 6),
+          Text(
+            approved
+                ? 'Afirmación revisada por el equipo profesional. No sustituye una consulta médica.'
+                : 'Pendiente de revisión profesional. No la tomes como recomendación médica.',
+            style: Theme.of(context).textTheme.bodySmall,
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _RecipeVideo extends StatefulWidget {
+  const _RecipeVideo({required this.url});
+
+  final String url;
+
+  @override
+  State<_RecipeVideo> createState() => _RecipeVideoState();
+}
+
+class _RecipeVideoState extends State<_RecipeVideo> {
+  late final VideoPlayerController _controller =
+      VideoPlayerController.networkUrl(Uri.parse(widget.url));
+  bool _ready = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller.initialize().then((_) {
+      if (mounted) setState(() => _ready = true);
+    });
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (!_ready) {
+      return const SizedBox(
+        height: 200,
+        child: Center(child: CircularProgressIndicator()),
+      );
+    }
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(12),
+      child: AspectRatio(
+        aspectRatio: _controller.value.aspectRatio,
+        child: GestureDetector(
+          onTap: () => setState(
+            () => _controller.value.isPlaying
+                ? _controller.pause()
+                : _controller.play(),
+          ),
+          child: Stack(
+            alignment: Alignment.center,
+            children: [
+              VideoPlayer(_controller),
+              if (!_controller.value.isPlaying)
+                const Icon(Icons.play_circle, size: 64, color: Colors.white70),
+              Positioned(
+                left: 0,
+                right: 0,
+                bottom: 0,
+                child: VideoProgressIndicator(
+                  _controller,
+                  allowScrubbing: true,
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }

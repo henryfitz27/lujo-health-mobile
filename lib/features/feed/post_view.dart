@@ -6,6 +6,7 @@ import '../../api/models/post.dart';
 import '../../app/router.dart';
 import '../../widgets/profile_tile.dart';
 import 'post_actions.dart';
+import 'post_backgrounds.dart';
 
 /// Publicación a pantalla completa: video o imágenes de fondo, texto y acciones encima.
 class FullScreenPost extends StatefulWidget {
@@ -214,25 +215,15 @@ class _TextBackground extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
+    final bg = PostBackground.byKey(post.background);
     return Container(
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [scheme.primary, scheme.tertiary],
-        ),
-      ),
+      decoration: BoxDecoration(gradient: bg.gradient),
       padding: const EdgeInsets.fromLTRB(24, 96, 24, 160),
       child: Center(
         child: SingleChildScrollView(
           child: Text(
             post.body,
-            style: const TextStyle(
-              color: Colors.white,
-              fontSize: 22,
-              height: 1.4,
-            ),
+            style: TextStyle(color: bg.textColor, fontSize: 22, height: 1.4),
             textAlign: TextAlign.center,
           ),
         ),

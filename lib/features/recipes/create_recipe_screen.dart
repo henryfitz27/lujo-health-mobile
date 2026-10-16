@@ -109,10 +109,15 @@ class _CreateRecipeScreenState extends ConsumerState<CreateRecipeScreen> {
   ];
   String? _coverMediaId;
   String? _coverPath;
+  String? _videoPath;
+  late final _healthClaims = TextEditingController(
+    text: _base?.healthClaims ?? '',
+  );
   bool _saving = false;
 
   @override
   void dispose() {
+    _healthClaims.dispose();
     for (final c in [
       _title,
       _description,
@@ -141,6 +146,14 @@ class _CreateRecipeScreenState extends ConsumerState<CreateRecipeScreen> {
       imageQuality: 88,
     );
     if (img != null) setState(() => _coverPath = img.path);
+  }
+
+  Future<void> _pickVideo() async {
+    final v = await ImagePicker().pickVideo(
+      source: ImageSource.gallery,
+      maxDuration: const Duration(minutes: 5),
+    );
+    if (v != null) setState(() => _videoPath = v.path);
   }
 
   Future<void> _linkIngredient(_IngredientRow row) async {
@@ -196,6 +209,10 @@ class _CreateRecipeScreenState extends ConsumerState<CreateRecipeScreen> {
       if (_coverPath != null) {
         coverId = (await api.uploadMedia(_coverPath!)).id;
       }
+      var videoId = widget.existing?.video?.id;
+      if (_videoPath != null) {
+        videoId = (await api.uploadMedia(_videoPath!)).id;
+      }
       final calories = double.tryParse(_calories.text.trim());
       final input = {
         'title': _title.text.trim(),
@@ -205,6 +222,8 @@ class _CreateRecipeScreenState extends ConsumerState<CreateRecipeScreen> {
         'cookMinutes': int.tryParse(_cook.text) ?? 0,
         'difficulty': _difficulty,
         'coverMediaId': coverId,
+        'videoMediaId': videoId,
+        'healthClaims': _healthClaims.text.trim(),
         'utensils': _utensils.text
             .split(',')
             .map((u) => u.trim())
@@ -278,6 +297,8 @@ class _CreateRecipeScreenState extends ConsumerState<CreateRecipeScreen> {
           (c) => _categories.contains(c.id) && c.requiresReview,
         ) ??
         false;
+    final claimsNeedReview = _healthClaims.text.trim().isNotEmpty;
+    final requiresReview = needsReview || claimsNeedReview;
     return Scaffold(
       appBar: AppBar(
         title: Text(
@@ -294,7 +315,7 @@ class _CreateRecipeScreenState extends ConsumerState<CreateRecipeScreen> {
           ),
           FilledButton(
             onPressed: _saving ? null : () => _submit(publish: true),
-            child: Text(needsReview ? 'Enviar a revisión' : 'Publicar'),
+            child: Text(requiresReview ? 'Enviar a revisión' : 'Publicar'),
           ),
           const SizedBox(width: 8),
         ],
@@ -330,7 +351,29 @@ class _CreateRecipeScreenState extends ConsumerState<CreateRecipeScreen> {
                   ),
                 ),
                 const SizedBox(width: 12),
-                const Expanded(child: Text('Foto del resultado (opcional).')),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text('Foto del resultado (opcional).'),
+                      TextButton.icon(
+                        onPressed: _pickVideo,
+                        icon: Icon(
+                          _videoPath != null || widget.existing?.video != null
+                              ? Icons.videocam
+                              : Icons.videocam_outlined,
+                        ),
+                        label: Text(
+                          _videoPath != null
+                              ? 'Video elegido'
+                              : widget.existing?.video != null
+                              ? 'Cambiar video'
+                              : 'Añadir video de preparación',
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
               ],
             ),
             const SizedBox(height: 12),
@@ -346,6 +389,19 @@ class _CreateRecipeScreenState extends ConsumerState<CreateRecipeScreen> {
               decoration: const InputDecoration(labelText: 'Descripción'),
               maxLength: 3000,
               maxLines: 3,
+            ),
+            TextFormField(
+              controller: _healthClaims,
+              decoration: const InputDecoration(
+                labelText: 'Para qué es buena (opcional)',
+                helperText:
+                    'Por ejemplo: «tradicionalmente se usa para desinflamar». '
+                    'Toda afirmación de salud pasa por revisión profesional.',
+                helperMaxLines: 3,
+              ),
+              maxLength: 2000,
+              maxLines: 3,
+              onChanged: (_) => setState(() {}),
             ),
             Row(
               children: [

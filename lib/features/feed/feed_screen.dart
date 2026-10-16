@@ -4,7 +4,9 @@ import 'package:go_router/go_router.dart';
 
 import '../../api/api_client.dart';
 import '../../api/models/post.dart';
+import '../../api/models/recipe.dart';
 import '../../app/router.dart';
+import '../recipes/recipe_widgets.dart';
 import 'post_view.dart';
 
 /// Preferencia local de reproducción automática (se sincroniza con la API en la etapa de ajustes).
@@ -237,18 +239,24 @@ class _ExploreGrid extends ConsumerStatefulWidget {
 
 class _ExploreGridState extends ConsumerState<_ExploreGrid>
     with AutomaticKeepAliveClientMixin {
-  late Future<List<Post>> _future = _load();
+  late Future<(List<Post>, List<RecipeSummary>)> _future = _load();
 
   @override
   bool get wantKeepAlive => true;
 
-  Future<List<Post>> _load() =>
-      ref.read(apiClientProvider).feed('explore', limit: 30);
+  Future<(List<Post>, List<RecipeSummary>)> _load() async {
+    final api = ref.read(apiClientProvider);
+    final results = await Future.wait([
+      api.feed('explore', limit: 30),
+      api.searchRecipes({}),
+    ]);
+    return (results[0] as List<Post>, results[1] as List<RecipeSummary>);
+  }
 
   @override
   Widget build(BuildContext context) {
     super.build(context);
-    return FutureBuilder<List<Post>>(
+    return FutureBuilder<(List<Post>, List<RecipeSummary>)>(
       future: _future,
       builder: (context, snap) {
         if (snap.hasError) {
@@ -262,8 +270,8 @@ class _ExploreGridState extends ConsumerState<_ExploreGrid>
             child: CircularProgressIndicator(color: Colors.white),
           );
         }
-        final posts = snap.data!;
-        if (posts.isEmpty) {
+        final (posts, recipes) = snap.data!;
+        if (posts.isEmpty && recipes.isEmpty) {
           return _Empty(
             message: 'Aún no hay publicaciones públicas.',
             onRetry: () async => setState(() => _future = _load()),
@@ -271,24 +279,112 @@ class _ExploreGridState extends ConsumerState<_ExploreGrid>
         }
         return RefreshIndicator(
           onRefresh: () async => setState(() => _future = _load()),
-          child: GridView.builder(
-            padding: EdgeInsets.fromLTRB(
-              2,
-              MediaQuery.paddingOf(context).top + kToolbarHeight + 4,
-              2,
-              16,
-            ),
-            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-              crossAxisCount: 3,
-              mainAxisSpacing: 2,
-              crossAxisSpacing: 2,
-              childAspectRatio: 3 / 4,
-            ),
-            itemCount: posts.length,
-            itemBuilder: (_, i) => _ExploreTile(post: posts[i]),
+          child: CustomScrollView(
+            slivers: [
+              SliverPadding(
+                padding: EdgeInsets.only(
+                  top: MediaQuery.paddingOf(context).top + kToolbarHeight + 4,
+                ),
+              ),
+              if (recipes.isNotEmpty) ...[
+                const SliverToBoxAdapter(
+                  child: Padding(
+                    padding: EdgeInsets.fromLTRB(12, 8, 12, 4),
+                    child: Text(
+                      'Recetas recientes',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                ),
+                SliverToBoxAdapter(
+                  child: SizedBox(
+                    height: 150,
+                    child: ListView.builder(
+                      scrollDirection: Axis.horizontal,
+                      padding: const EdgeInsets.symmetric(horizontal: 8),
+                      itemCount: recipes.length,
+                      itemBuilder: (_, i) => _RecipeTile(recipe: recipes[i]),
+                    ),
+                  ),
+                ),
+              ],
+              SliverPadding(
+                padding: const EdgeInsets.fromLTRB(2, 8, 2, 16),
+                sliver: SliverGrid(
+                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                    crossAxisCount: 3,
+                    mainAxisSpacing: 2,
+                    crossAxisSpacing: 2,
+                    childAspectRatio: 3 / 4,
+                  ),
+                  delegate: SliverChildBuilderDelegate(
+                    (_, i) => _ExploreTile(post: posts[i]),
+                    childCount: posts.length,
+                  ),
+                ),
+              ),
+            ],
           ),
         );
       },
+    );
+  }
+}
+
+class _RecipeTile extends StatelessWidget {
+  const _RecipeTile({required this.recipe});
+
+  final RecipeSummary recipe;
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      width: 150,
+      child: Card(
+        clipBehavior: Clip.antiAlias,
+        child: InkWell(
+          onTap: () => context.push(Routes.recipe(recipe.id)),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Expanded(
+                child: recipe.coverUrl.isNotEmpty
+                    ? Image.network(
+                        recipe.coverUrl,
+                        width: double.infinity,
+                        fit: BoxFit.cover,
+                      )
+                    : Container(
+                        color: Theme.of(context).colorScheme.secondaryContainer,
+                        alignment: Alignment.center,
+                        child: const Icon(Icons.restaurant_menu, size: 36),
+                      ),
+              ),
+              Padding(
+                padding: const EdgeInsets.all(8),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      recipe.title,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(fontWeight: FontWeight.w600),
+                    ),
+                    Text(
+                      '${recipe.totalMinutes} min · ${difficultyLabel(recipe.difficulty)}',
+                      style: Theme.of(context).textTheme.bodySmall,
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 }

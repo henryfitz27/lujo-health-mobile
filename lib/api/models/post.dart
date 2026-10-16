@@ -111,6 +111,7 @@ class Post {
     required this.visibility,
     required this.title,
     required this.body,
+    required this.background,
     required this.tags,
     required this.commentsPolicy,
     required this.sponsorship,
@@ -134,6 +135,7 @@ class Post {
     visibility: json['visibility'] as String? ?? 'public',
     title: json['title'] as String? ?? '',
     body: json['body'] as String? ?? '',
+    background: json['background'] as String? ?? '',
     tags: [
       for (final t in (json['tags'] as List<dynamic>? ?? const [])) t as String,
     ],
@@ -172,6 +174,7 @@ class Post {
   final String visibility;
   final String title;
   final String body;
+  final String background;
   final List<String> tags;
   final String commentsPolicy;
   final String sponsorship;
@@ -205,6 +208,7 @@ class Post {
     visibility: visibility,
     title: title,
     body: body,
+    background: background,
     tags: tags,
     commentsPolicy: commentsPolicy,
     sponsorship: sponsorship,
