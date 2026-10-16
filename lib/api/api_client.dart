@@ -7,6 +7,7 @@ import 'models/account.dart';
 import 'models/catalog_item.dart';
 import 'models/me.dart';
 import 'models/notebook.dart';
+import 'models/organization.dart';
 import 'models/post.dart';
 import 'models/profile.dart';
 import 'models/recipe.dart';
@@ -651,6 +652,26 @@ class ApiClient {
       DataRequest.fromJson(
         await _request('POST', '/me/data-requests', data: {'kind': kind}),
       );
+
+  // --- Organizaciones ---
+
+  Future<Map<String, dynamic>> currentOrganization() =>
+      _get('/organizations/current');
+
+  Future<(List<OrganizationSummary>, String)> myOrganizations() async {
+    final json = await _get('/me/organizations');
+    return (
+      OrganizationSummary.listFromJson(json['items']),
+      json['current'] as String? ?? '',
+    );
+  }
+
+  Future<Me> switchOrganization(String slug) async => Me.fromJson(
+    await _request('POST', '/me/organizations/switch', data: {'slug': slug}),
+  );
+
+  Future<Me> joinOrganization(String slug) async =>
+      Me.fromJson(await _request('POST', '/organizations/$slug/join'));
 
   // --- Transporte ---
 

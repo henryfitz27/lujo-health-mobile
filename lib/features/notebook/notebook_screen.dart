@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../api/api_client.dart';
 import '../../api/models/notebook.dart';
+import '../../app/organization.dart';
 import '../../app/router.dart';
 import 'collection_screen.dart';
 import 'entry_editor_screen.dart';
@@ -160,7 +161,17 @@ class _NotebookScreenState extends ConsumerState<NotebookScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Mi cuaderno'),
+        automaticallyImplyLeading: false,
+        title: Consumer(
+          builder: (context, ref, _) => Text(
+            ref
+                    .watch(organizationProvider)
+                    .value
+                    ?.organization
+                    .moduleName('notebook', 'Mis notas') ??
+                'Mis notas',
+          ),
+        ),
         actions: [
           IconButton(
             tooltip: 'Compartido conmigo',

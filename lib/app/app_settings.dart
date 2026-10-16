@@ -73,7 +73,11 @@ final appSettingsProvider = NotifierProvider<AppSettingsNotifier, AppSettings>(
 );
 
 /// Tema con la semilla de la marca; en alto contraste sube el contraste y quita transparencias.
-ThemeData buildTheme(Brightness brightness, AppSettings s) {
+ThemeData buildTheme(
+  Brightness brightness,
+  AppSettings s, {
+  Color seed = const Color(0xFF2E7D5B),
+}) {
   final scheme = s.highContrast
       ? (brightness == Brightness.dark
             ? const ColorScheme.highContrastDark(
@@ -84,10 +88,7 @@ ThemeData buildTheme(Brightness brightness, AppSettings s) {
                 primary: Color(0xFF0E4F35),
                 secondary: Color(0xFF5D3A00),
               ))
-      : ColorScheme.fromSeed(
-          seedColor: const Color(0xFF2E7D5B),
-          brightness: brightness,
-        );
+      : ColorScheme.fromSeed(seedColor: seed, brightness: brightness);
   return ThemeData(
     colorScheme: scheme,
     useMaterial3: true,

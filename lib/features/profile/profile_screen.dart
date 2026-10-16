@@ -5,7 +5,11 @@ import 'package:go_router/go_router.dart';
 import '../../api/api_client.dart';
 import '../../account/device_registration.dart';
 import '../../api/models/me.dart';
+import '../../app/organization.dart';
 import '../../app/router.dart';
+
+import 'package:url_launcher/url_launcher.dart';
+
 import '../../widgets/profile_tile.dart';
 
 class ProfileScreen extends ConsumerWidget {
@@ -102,6 +106,46 @@ class ProfileScreen extends ConsumerWidget {
               const SizedBox(height: 16),
               _CountsRow(user: user),
               const SizedBox(height: 16),
+              Consumer(
+                builder: (context, ref, _) {
+                  final org = ref
+                      .watch(organizationProvider)
+                      .value
+                      ?.organization;
+                  return ListTile(
+                    leading: const Icon(Icons.apartment_outlined),
+                    title: Text(org?.name ?? 'Mi organización'),
+                    subtitle: Text(
+                      org?.tagline.isNotEmpty == true
+                          ? org!.tagline
+                          : 'Cambiar de organización o unirme a otra',
+                    ),
+                    trailing: const Icon(Icons.chevron_right),
+                    onTap: () => context.push(Routes.organizations),
+                  );
+                },
+              ),
+              Consumer(
+                builder: (context, ref, _) {
+                  final org = ref
+                      .watch(organizationProvider)
+                      .value
+                      ?.organization;
+                  if (org == null || org.businessUrl.isEmpty) {
+                    return const SizedBox.shrink();
+                  }
+                  return ListTile(
+                    leading: const Icon(Icons.business_center_outlined),
+                    title: const Text('Mi negocio'),
+                    subtitle: const Text('Abre tu backoffice'),
+                    trailing: const Icon(Icons.open_in_new),
+                    onTap: () => launchUrl(
+                      Uri.parse(org.businessUrl),
+                      mode: LaunchMode.externalApplication,
+                    ),
+                  );
+                },
+              ),
               ListTile(
                 leading: const Icon(Icons.book_outlined),
                 title: const Text('Mi cuaderno'),
