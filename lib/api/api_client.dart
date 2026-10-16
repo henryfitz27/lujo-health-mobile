@@ -8,6 +8,7 @@ import 'models/catalog_item.dart';
 import 'models/me.dart';
 import 'models/post.dart';
 import 'models/profile.dart';
+import 'models/recipe.dart';
 
 class ApiException implements Exception {
   const ApiException(this.statusCode, this.code, this.message, {this.field});
@@ -308,6 +309,145 @@ class ApiClient {
       'details': details,
     },
   );
+
+  // --- Recetas, ingredientes, búsqueda y lista de compras ---
+
+  Future<List<RecipeCategory>> recipeCategories() async =>
+      RecipeCategory.listFromJson((await _get('/recipe-categories'))['items']);
+
+  Future<Recipe> getRecipe(String id, {int? servings}) async => Recipe.fromJson(
+    await _get('/recipes/$id', query: {'servings': ?servings}),
+  );
+
+  Future<Recipe> createRecipe(Map<String, dynamic> input) async =>
+      Recipe.fromJson(await _request('POST', '/recipes', data: input));
+
+  Future<Recipe> updateRecipe(String id, Map<String, dynamic> input) async =>
+      Recipe.fromJson(await _request('PUT', '/recipes/$id', data: input));
+
+  Future<void> deleteRecipe(String id) => _request('DELETE', '/recipes/$id');
+
+  Future<Recipe> publishRecipe(String id) async =>
+      Recipe.fromJson(await _request('POST', '/recipes/$id/publish'));
+
+  Future<Recipe> archiveRecipe(String id, {bool archive = true}) async =>
+      Recipe.fromJson(
+        await _request(
+          'POST',
+          '/recipes/$id/${archive ? 'archive' : 'unarchive'}',
+        ),
+      );
+
+  Future<Recipe> rateRecipe(
+    String id, {
+    required int clarity,
+    required int ease,
+  }) async => Recipe.fromJson(
+    await _request(
+      'POST',
+      '/recipes/$id/rating',
+      data: {'clarity': clarity, 'ease': ease},
+    ),
+  );
+
+  Future<Recipe> saveRecipe(String id, {bool save = true}) async =>
+      Recipe.fromJson(
+        await _request(save ? 'POST' : 'DELETE', '/recipes/$id/save'),
+      );
+
+  Future<List<RecipeSummary>> recipeVariants(String id) async =>
+      RecipeSummary.listFromJson(
+        (await _get('/recipes/$id/variants'))['items'],
+      );
+
+  Future<int> addRecipeToShoppingList(
+    String id, {
+    required int servings,
+    List<int> ingredientIds = const [],
+  }) async =>
+      (await _request(
+            'POST',
+            '/recipes/$id/shopping-list',
+            data: {'servings': servings, 'ingredientIds': ingredientIds},
+          ))['added']
+          as int? ??
+      0;
+
+  Future<List<RecipeSummary>> searchRecipes(
+    Map<String, dynamic> filters,
+  ) async => RecipeSummary.listFromJson(
+    (await _get('/recipes', query: {...filters, 'limit': 30}))['items'],
+  );
+
+  Future<List<RecipeSummary>> myRecipes({String status = ''}) async =>
+      RecipeSummary.listFromJson(
+        (await _get(
+          '/me/recipes',
+          query: {'status': status, 'limit': 50},
+        ))['items'],
+      );
+
+  Future<List<RecipeSummary>> savedRecipes() async =>
+      RecipeSummary.listFromJson((await _get('/me/saved-recipes'))['items']);
+
+  Future<List<RecipeSummary>> userRecipes(String username) async =>
+      RecipeSummary.listFromJson(
+        (await _get('/users/$username/recipes'))['items'],
+      );
+
+  Future<List<IngredientSummary>> ingredients({String q = ''}) async =>
+      IngredientSummary.listFromJson(
+        (await _get('/ingredients', query: {'q': q, 'limit': 50}))['items'],
+      );
+
+  Future<(Ingredient, List<RecipeSummary>, List<Post>)> ingredient(
+    String slug,
+  ) async {
+    final body = await _get('/ingredients/$slug');
+    return (
+      Ingredient.fromJson(body['ingredient'] as Map<String, dynamic>),
+      RecipeSummary.listFromJson(body['recipes']),
+      Post.listFromJson(body['posts']),
+    );
+  }
+
+  Future<SearchResults> search(String q, {String type = ''}) async =>
+      SearchResults.fromJson(
+        await _get('/search', query: {'q': q, 'type': type, 'limit': 20}),
+      );
+
+  Future<List<ShoppingItem>> shoppingList() async =>
+      ShoppingItem.listFromJson((await _get('/me/shopping-list'))['items']);
+
+  Future<List<ShoppingItem>> addShoppingItems(
+    List<Map<String, dynamic>> items,
+  ) async => ShoppingItem.listFromJson(
+    (await _request(
+      'POST',
+      '/me/shopping-list',
+      data: {'items': items},
+    ))['items'],
+  );
+
+  Future<ShoppingItem> updateShoppingItem(
+    int id, {
+    bool? checked,
+    String? name,
+  }) async => ShoppingItem.fromJson(
+    await _request(
+      'PATCH',
+      '/me/shopping-list/$id',
+      data: {'checked': ?checked, 'name': ?name},
+    ),
+  );
+
+  Future<void> deleteShoppingItem(int id) =>
+      _request('DELETE', '/me/shopping-list/$id');
+
+  Future<int> clearCheckedShoppingItems() async =>
+      (await _request('DELETE', '/me/shopping-list/checked'))['removed']
+          as int? ??
+      0;
 
   // --- Transporte ---
 

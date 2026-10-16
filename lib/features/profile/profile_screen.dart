@@ -109,6 +109,18 @@ class ProfileScreen extends ConsumerWidget {
                 trailing: const Icon(Icons.chevron_right),
                 onTap: () => context.push(Routes.myPosts),
               ),
+              ListTile(
+                leading: const Icon(Icons.menu_book_outlined),
+                title: const Text('Mis recetas'),
+                trailing: const Icon(Icons.chevron_right),
+                onTap: () => context.push(Routes.myRecipes),
+              ),
+              ListTile(
+                leading: const Icon(Icons.shopping_cart_outlined),
+                title: const Text('Lista de compras'),
+                trailing: const Icon(Icons.chevron_right),
+                onTap: () => context.push(Routes.shoppingList),
+              ),
               if (user.isPrivate)
                 ListTile(
                   leading: const Icon(Icons.lock_outline),

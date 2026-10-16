@@ -2,7 +2,14 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../auth/auth_service.dart';
+import '../features/explore/explore_screen.dart';
 import '../features/feed/feed_screen.dart';
+import '../features/recipes/cook_mode_screen.dart';
+import '../features/recipes/create_recipe_screen.dart';
+import '../features/recipes/ingredient_screen.dart';
+import '../features/recipes/my_recipes_screen.dart';
+import '../features/recipes/recipe_screen.dart';
+import '../features/recipes/shopping_list_screen.dart';
 import '../features/login/login_screen.dart';
 import '../features/posts/create_post_screen.dart';
 import '../features/posts/my_posts_screen.dart';
@@ -24,6 +31,13 @@ abstract final class Routes {
   static const createPost = '/posts/new';
   static const myPosts = '/profile/posts';
   static String post(String id) => '/posts/$id';
+  static const explore = '/explore';
+  static const createRecipe = '/recipes/new';
+  static const myRecipes = '/profile/recipes';
+  static const shoppingList = '/shopping-list';
+  static String recipe(String id) => '/recipes/$id';
+  static String cookMode(String id) => '/recipes/$id/cook';
+  static String ingredient(String slug) => '/ingredients/$slug';
   static const profile = '/profile';
   static const editProfile = '/profile/edit';
   static const followRequests = '/profile/requests';
@@ -58,6 +72,31 @@ final routerProvider = Provider<GoRouter>((ref) {
         builder: (_, _) => const OnboardingScreen(),
       ),
       GoRoute(path: Routes.feed, builder: (_, _) => const FeedScreen()),
+      GoRoute(path: Routes.explore, builder: (_, _) => const ExploreScreen()),
+      GoRoute(
+        path: Routes.createRecipe,
+        builder: (_, _) => const CreateRecipeScreen(),
+      ),
+      GoRoute(
+        path: '/recipes/:id',
+        builder: (_, state) => RecipeScreen(id: state.pathParameters['id']!),
+        routes: [
+          GoRoute(
+            path: 'cook',
+            builder: (_, state) =>
+                CookModeScreen(id: state.pathParameters['id']!),
+          ),
+        ],
+      ),
+      GoRoute(
+        path: '/ingredients/:slug',
+        builder: (_, state) =>
+            IngredientScreen(slug: state.pathParameters['slug']!),
+      ),
+      GoRoute(
+        path: Routes.shoppingList,
+        builder: (_, _) => const ShoppingListScreen(),
+      ),
       GoRoute(
         path: Routes.createPost,
         builder: (_, _) => const CreatePostScreen(),
@@ -71,6 +110,7 @@ final routerProvider = Provider<GoRouter>((ref) {
         builder: (_, _) => const ProfileScreen(),
         routes: [
           GoRoute(path: 'posts', builder: (_, _) => const MyPostsScreen()),
+          GoRoute(path: 'recipes', builder: (_, _) => const MyRecipesScreen()),
           GoRoute(path: 'edit', builder: (_, _) => const EditProfileScreen()),
           GoRoute(
             path: 'requests',

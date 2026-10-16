@@ -77,6 +77,11 @@ class _FeedScreenState extends ConsumerState<FeedScreen>
         centerTitle: true,
         actions: [
           IconButton(
+            tooltip: 'Buscar',
+            icon: const Icon(Icons.search),
+            onPressed: () => context.push(Routes.explore),
+          ),
+          IconButton(
             tooltip: 'Crear publicación',
             icon: const Icon(Icons.add_box_outlined),
             onPressed: () => context.push(Routes.createPost),

@@ -82,6 +82,27 @@ class PostViewer {
   bool get reacted => reaction.isNotEmpty;
 }
 
+class PostLink {
+  const PostLink({
+    required this.linkType,
+    required this.targetId,
+    required this.label,
+    required this.url,
+  });
+
+  factory PostLink.fromJson(Map<String, dynamic> json) => PostLink(
+    linkType: json['linkType'] as String,
+    targetId: json['targetId'] as String? ?? '',
+    label: json['label'] as String? ?? '',
+    url: json['url'] as String? ?? '',
+  );
+
+  final String linkType;
+  final String targetId;
+  final String label;
+  final String url;
+}
+
 class Post {
   const Post({
     required this.id,
@@ -101,6 +122,7 @@ class Post {
     required this.createdAt,
     required this.author,
     required this.media,
+    required this.links,
     required this.counts,
     required this.viewer,
   });
@@ -127,6 +149,10 @@ class Post {
     media: [
       for (final m in (json['media'] as List<dynamic>? ?? const []))
         PostMedia.fromJson(m as Map<String, dynamic>),
+    ],
+    links: [
+      for (final l in (json['links'] as List<dynamic>? ?? const []))
+        PostLink.fromJson(l as Map<String, dynamic>),
     ],
     counts: PostCounts.fromJson(json['counts'] as Map<String, dynamic>?),
     viewer: PostViewer.fromJson(json['viewer'] as Map<String, dynamic>?),
@@ -157,10 +183,19 @@ class Post {
   final DateTime createdAt;
   final ProfileSummary author;
   final List<PostMedia> media;
+  final List<PostLink> links;
   final PostCounts counts;
   final PostViewer viewer;
 
   bool get isReel => type == 'reel';
+
+  PostLink? get recipeLink {
+    for (final l in links) {
+      if (l.linkType == 'recipe') return l;
+    }
+    return null;
+  }
+
   bool get isSponsored => sponsorship != 'none';
 
   Post withInteraction(PostCounts counts, PostViewer viewer) => Post(
@@ -181,6 +216,7 @@ class Post {
     createdAt: createdAt,
     author: author,
     media: media,
+    links: links,
     counts: counts,
     viewer: viewer,
   );

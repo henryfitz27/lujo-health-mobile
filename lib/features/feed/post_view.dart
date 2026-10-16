@@ -162,6 +162,19 @@ class _Caption extends StatelessWidget {
             ),
           ),
         ],
+        if (post.recipeLink != null) ...[
+          const SizedBox(height: 6),
+          ActionChip(
+            avatar: const Icon(Icons.menu_book_outlined, size: 16),
+            label: Text(
+              post.recipeLink!.label.isNotEmpty
+                  ? post.recipeLink!.label
+                  : 'Ver receta',
+            ),
+            onPressed: () =>
+                context.push(Routes.recipe(post.recipeLink!.targetId)),
+          ),
+        ],
         if (post.title.isNotEmpty) ...[
           const SizedBox(height: 6),
           Text(
