@@ -6,15 +6,25 @@ import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
 
 import '../../api/api_client.dart';
+import '../../api/models/creator.dart';
 import '../../api/models/post.dart';
 import '../feed/post_backgrounds.dart';
 
 /// Crear una publicación: reel (video), fotografía, carrusel o texto breve.
 class CreatePostScreen extends ConsumerStatefulWidget {
-  const CreatePostScreen({super.key, this.existing});
+  const CreatePostScreen({
+    super.key,
+    this.existing,
+    this.communityId,
+    this.communityName,
+  });
 
   /// Si se indica, edita un borrador o programada existente.
   final Post? existing;
+
+  /// Comunidad en la que se publica (v2 §15); nula para el feed general.
+  final String? communityId;
+  final String? communityName;
 
   @override
   ConsumerState<CreatePostScreen> createState() => _CreatePostScreenState();
@@ -47,6 +57,16 @@ class _CreatePostScreenState extends ConsumerState<CreatePostScreen> {
       ? widget.existing!.background
       : PostBackground.random().key;
   final _files = <_PickedFile>[];
+  late String _claimType = widget.existing?.claimType ?? 'none';
+  late String _contentNature = widget.existing?.contentNature ?? 'experience';
+  late String? _seriesId = widget.existing?.seriesId;
+  List<Series> _series = const [];
+  final _pollOptions = <TextEditingController>[
+    TextEditingController(),
+    TextEditingController(),
+  ];
+  bool _pollMultiple = false;
+  DateTime? _pollClosesAt;
   late final List<PostMedia> _existingMedia = widget.existing?.media ?? [];
   bool _saving = false;
   String? _progress;
@@ -55,6 +75,22 @@ class _CreatePostScreenState extends ConsumerState<CreatePostScreen> {
   void initState() {
     super.initState();
     _scheduledAt = widget.existing?.scheduledAt;
+    final poll = widget.existing?.poll;
+    if (poll != null) {
+      _pollOptions.clear();
+      for (final o in poll.options) {
+        _pollOptions.add(TextEditingController(text: o.text));
+      }
+      _pollMultiple = poll.multiple;
+      _pollClosesAt = poll.closesAt;
+    }
+    ref
+        .read(apiClientProvider)
+        .mySeries()
+        .then((s) {
+          if (mounted) setState(() => _series = s);
+        })
+        .catchError((_) {});
   }
 
   @override
@@ -65,6 +101,9 @@ class _CreatePostScreenState extends ConsumerState<CreatePostScreen> {
     _sponsor.dispose();
     for (final f in _files) {
       f.caption.dispose();
+    }
+    for (final c in _pollOptions) {
+      c.dispose();
     }
     super.dispose();
   }
@@ -139,6 +178,15 @@ class _CreatePostScreenState extends ConsumerState<CreatePostScreen> {
       'carousel' when n < 2 || n > 10 =>
         'Un carrusel lleva entre 2 y 10 imágenes.',
       'text' when _body.text.trim().isEmpty => 'Escribe el texto.',
+      'article' when _title.text.trim().isEmpty =>
+        'Un artículo necesita título.',
+      'article' when _body.text.trim().length < 200 =>
+        'Un artículo desarrolla el tema: al menos 200 caracteres.',
+      'article' when n > 1 => 'Un artículo lleva como mucho una portada.',
+      'poll' when _body.text.trim().isEmpty => 'Escribe la pregunta.',
+      'poll'
+          when _pollOptions.where((c) => c.text.trim().isNotEmpty).length < 2 =>
+        'Una encuesta tiene al menos 2 opciones.',
       _ => null,
     };
   }
@@ -184,8 +232,23 @@ class _CreatePostScreenState extends ConsumerState<CreatePostScreen> {
         'sponsorship': _sponsorship,
         'sponsorName': _sponsor.text.trim(),
         'scheduledAt': _scheduledAt?.toUtc().toIso8601String(),
-        'media': _type == 'text' ? <Map<String, String>>[] : media,
+        'media': _type == 'text' || _type == 'poll'
+            ? <Map<String, String>>[]
+            : media,
         'publish': publish,
+        'claimType': _claimType,
+        'contentNature': _contentNature,
+        'communityId': widget.existing?.communityId ?? widget.communityId ?? '',
+        'seriesId': _seriesId ?? '',
+        if (_type == 'poll')
+          'poll': {
+            'options': [
+              for (final c in _pollOptions)
+                if (c.text.trim().isNotEmpty) c.text.trim(),
+            ],
+            'multiple': _pollMultiple,
+            'closesAt': _pollClosesAt?.toUtc().toIso8601String(),
+          },
       };
       final post = widget.existing == null
           ? await api.createPost(input)
@@ -276,37 +339,45 @@ class _CreatePostScreenState extends ConsumerState<CreatePostScreen> {
               const SizedBox(height: 12),
             ],
             if (!editing)
-              SegmentedButton<String>(
-                segments: const [
-                  ButtonSegment(
-                    value: 'reel',
-                    label: Text('Reel'),
-                    icon: Icon(Icons.videocam_outlined),
-                  ),
-                  ButtonSegment(
-                    value: 'photo',
-                    label: Text('Foto'),
-                    icon: Icon(Icons.photo_outlined),
-                  ),
-                  ButtonSegment(
-                    value: 'carousel',
-                    label: Text('Carrusel'),
-                    icon: Icon(Icons.collections_outlined),
-                  ),
-                  ButtonSegment(
-                    value: 'text',
-                    label: Text('Texto'),
-                    icon: Icon(Icons.notes),
-                  ),
-                ],
-                selected: {_type},
-                onSelectionChanged: (s) => setState(() {
-                  _type = s.first;
-                  _files.clear();
-                }),
+              SizedBox(
+                height: 44,
+                child: ListView(
+                  scrollDirection: Axis.horizontal,
+                  children: [
+                    for (final (value, label, icon) in const [
+                      ('reel', 'Reel', Icons.videocam_outlined),
+                      ('photo', 'Foto', Icons.photo_outlined),
+                      ('carousel', 'Carrusel', Icons.collections_outlined),
+                      ('text', 'Texto', Icons.notes),
+                      ('article', 'Artículo', Icons.article_outlined),
+                      ('poll', 'Encuesta', Icons.poll_outlined),
+                    ])
+                      Padding(
+                        padding: const EdgeInsets.only(right: 6),
+                        child: ChoiceChip(
+                          avatar: Icon(icon, size: 16),
+                          label: Text(label),
+                          selected: _type == value,
+                          onSelected: (_) => setState(() {
+                            _type = value;
+                            _files.clear();
+                          }),
+                        ),
+                      ),
+                  ],
+                ),
               ),
             const SizedBox(height: 16),
-            if (_type != 'text') _mediaSection(),
+            if (widget.communityName != null ||
+                widget.existing?.communityId != null)
+              Padding(
+                padding: const EdgeInsets.only(bottom: 8),
+                child: Chip(
+                  avatar: const Icon(Icons.groups_outlined, size: 16),
+                  label: Text('En ${widget.communityName ?? 'la comunidad'}'),
+                ),
+              ),
+            if (_type != 'text' && _type != 'poll') _mediaSection(),
             if (_type == 'text') ...[
               Container(
                 height: 140,
@@ -342,15 +413,98 @@ class _CreatePostScreenState extends ConsumerState<CreatePostScreen> {
             TextFormField(
               controller: _body,
               decoration: InputDecoration(
-                labelText: _type == 'text' ? 'Texto' : 'Descripción',
+                labelText: switch (_type) {
+                  'text' => 'Texto',
+                  'article' => 'Contenido del artículo',
+                  'poll' => 'Pregunta',
+                  _ => 'Descripción',
+                },
               ),
               onChanged: (_) => _type == 'text' ? setState(() {}) : null,
-              maxLength: _type == 'text' ? 5000 : 2000,
-              maxLines: _type == 'text' ? 8 : 4,
-              validator: (v) => _type == 'text' && (v ?? '').trim().isEmpty
+              maxLength: switch (_type) {
+                'text' => 5000,
+                'article' => 30000,
+                _ => 2000,
+              },
+              maxLines: switch (_type) {
+                'text' => 8,
+                'article' => 16,
+                _ => 4,
+              },
+              validator: (v) =>
+                  (_type == 'text' || _type == 'poll') &&
+                      (v ?? '').trim().isEmpty
                   ? 'Escribe el texto de la publicación.'
                   : null,
             ),
+            if (_type == 'poll') ...[
+              for (final (i, c) in _pollOptions.indexed)
+                TextFormField(
+                  controller: c,
+                  decoration: InputDecoration(
+                    labelText: 'Opción ${i + 1}',
+                    suffixIcon: _pollOptions.length > 2
+                        ? IconButton(
+                            icon: const Icon(Icons.remove_circle_outline),
+                            onPressed: () => setState(
+                              () => _pollOptions.removeAt(i).dispose(),
+                            ),
+                          )
+                        : null,
+                  ),
+                  maxLength: 80,
+                ),
+              Row(
+                children: [
+                  if (_pollOptions.length < 6)
+                    TextButton.icon(
+                      onPressed: () => setState(
+                        () => _pollOptions.add(TextEditingController()),
+                      ),
+                      icon: const Icon(Icons.add),
+                      label: const Text('Opción'),
+                    ),
+                  const Spacer(),
+                  const Text('Varias respuestas'),
+                  Switch(
+                    value: _pollMultiple,
+                    onChanged: (v) => setState(() => _pollMultiple = v),
+                  ),
+                ],
+              ),
+              ListTile(
+                contentPadding: EdgeInsets.zero,
+                leading: const Icon(Icons.timer_outlined),
+                title: const Text('Cierre de la encuesta'),
+                subtitle: Text(
+                  _pollClosesAt == null ? 'Sin cierre' : _fmt(_pollClosesAt!),
+                ),
+                trailing: _pollClosesAt != null
+                    ? IconButton(
+                        icon: const Icon(Icons.close),
+                        onPressed: () => setState(() => _pollClosesAt = null),
+                      )
+                    : null,
+                onTap: () async {
+                  final d = await showDatePicker(
+                    context: context,
+                    firstDate: DateTime.now(),
+                    lastDate: DateTime.now().add(const Duration(days: 90)),
+                    initialDate: DateTime.now().add(const Duration(days: 3)),
+                  );
+                  if (d == null) return;
+                  setState(
+                    () => _pollClosesAt = DateTime(
+                      d.year,
+                      d.month,
+                      d.day,
+                      23,
+                      59,
+                    ),
+                  );
+                },
+              ),
+            ],
             TextFormField(
               controller: _tags,
               decoration: const InputDecoration(
@@ -358,6 +512,72 @@ class _CreatePostScreenState extends ConsumerState<CreatePostScreen> {
                 helperText: 'Separadas por espacios, hasta 15',
               ),
             ),
+            const SizedBox(height: 12),
+            DropdownButtonFormField<String>(
+              initialValue: _contentNature,
+              decoration: const InputDecoration(
+                labelText: 'Qué tipo de contenido es',
+              ),
+              items: const [
+                DropdownMenuItem(
+                  value: 'experience',
+                  child: Text('Experiencia personal'),
+                ),
+                DropdownMenuItem(
+                  value: 'educational',
+                  child: Text('Educativo'),
+                ),
+                DropdownMenuItem(value: 'promotion', child: Text('Promoción')),
+              ],
+              onChanged: (v) => setState(() => _contentNature = v!),
+            ),
+            const SizedBox(height: 12),
+            DropdownButtonFormField<String>(
+              initialValue: _claimType,
+              decoration: const InputDecoration(
+                labelText: 'Afirmaciones de salud',
+                helperText: 'Si afirmas beneficios o efectos, un revisor lo comprobará antes de destacarlo.',
+                helperMaxLines: 2,
+              ),
+              items: const [
+                DropdownMenuItem(
+                  value: 'none',
+                  child: Text('No hace afirmaciones de salud'),
+                ),
+                DropdownMenuItem(
+                  value: 'traditional',
+                  child: Text('Uso tradicional'),
+                ),
+                DropdownMenuItem(
+                  value: 'preliminary',
+                  child: Text('Resultados preliminares'),
+                ),
+                DropdownMenuItem(
+                  value: 'clinical',
+                  child: Text('Evidencia clínica'),
+                ),
+              ],
+              onChanged: (v) => setState(() => _claimType = v!),
+            ),
+            if (_series.isNotEmpty) ...[
+              const SizedBox(height: 12),
+              DropdownButtonFormField<String?>(
+                initialValue: _seriesId,
+                decoration: const InputDecoration(labelText: 'Serie'),
+                items: [
+                  const DropdownMenuItem<String?>(
+                    value: null,
+                    child: Text('Sin serie'),
+                  ),
+                  for (final s in _series)
+                    DropdownMenuItem<String?>(
+                      value: s.id,
+                      child: Text(s.title),
+                    ),
+                ],
+                onChanged: (v) => setState(() => _seriesId = v),
+              ),
+            ],
             const SizedBox(height: 12),
             DropdownButtonFormField<String>(
               initialValue: _sponsorship,

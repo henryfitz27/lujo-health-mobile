@@ -112,11 +112,20 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
               ),
               data: (_) => const SizedBox.shrink(),
             )
-          : _ProfileBody(
-              profile: profile,
-              busy: _busy,
-              onFollow: () => _run((api) => api.follow(widget.username)),
-              onUnfollow: () => _run((api) => api.unfollow(widget.username)),
+          : Column(
+              children: [
+                if (profile.professional != null)
+                  _ProfessionalCard(profile: profile),
+                Expanded(
+                  child: _ProfileBody(
+                    profile: profile,
+                    busy: _busy,
+                    onFollow: () => _run((api) => api.follow(widget.username)),
+                    onUnfollow: () =>
+                        _run((api) => api.unfollow(widget.username)),
+                  ),
+                ),
+              ],
             ),
     );
   }
@@ -214,6 +223,70 @@ class _ProfileBody extends StatelessWidget {
           ),
         ],
       ],
+    );
+  }
+}
+
+/// Ficha profesional pública (v2 §5.3): especialidad, país y credencial verificada.
+class _ProfessionalCard extends StatelessWidget {
+  const _ProfessionalCard({required this.profile});
+
+  final PublicProfile profile;
+
+  @override
+  Widget build(BuildContext context) {
+    final p = profile.professional!;
+    final theme = Theme.of(context);
+    return Card(
+      margin: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+      child: Padding(
+        padding: const EdgeInsets.all(12),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Icon(
+                  p.verified
+                      ? Icons.verified
+                      : Icons.medical_information_outlined,
+                  color: p.verified ? theme.colorScheme.primary : null,
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    p.specialty.isNotEmpty
+                        ? p.specialty
+                        : 'Profesional de salud',
+                    style: theme.textTheme.titleMedium,
+                  ),
+                ),
+              ],
+            ),
+            Text(
+              p.verified
+                  ? 'Credencial verificada: ${p.verifiedCredential}'
+                  : 'Credencial sin verificar',
+              style: theme.textTheme.bodySmall,
+            ),
+            if (p.description.isNotEmpty) ...[
+              const SizedBox(height: 6),
+              Text(p.description, maxLines: 4, overflow: TextOverflow.ellipsis),
+            ],
+            if (p.contactEmail.isNotEmpty || p.contactUrl.isNotEmpty)
+              Padding(
+                padding: const EdgeInsets.only(top: 6),
+                child: Text(
+                  [
+                    p.contactEmail,
+                    p.contactUrl,
+                  ].where((x) => x.isNotEmpty).join(' · '),
+                  style: theme.textTheme.bodySmall,
+                ),
+              ),
+          ],
+        ),
+      ),
     );
   }
 }

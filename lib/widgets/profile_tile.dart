@@ -30,10 +30,18 @@ class ProfileAvatar extends StatelessWidget {
 
 /// Fila de perfil que navega al perfil público al tocarla.
 class ProfileTile extends StatelessWidget {
-  const ProfileTile({super.key, required this.profile, this.trailing});
+  const ProfileTile({
+    super.key,
+    required this.profile,
+    this.trailing,
+    this.subtitle,
+    this.onTap,
+  });
 
   final ProfileSummary profile;
   final Widget? trailing;
+  final String? subtitle;
+  final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {
@@ -41,11 +49,15 @@ class ProfileTile extends StatelessWidget {
     return ListTile(
       leading: ProfileAvatar(name: profile.name, avatarUrl: profile.avatarUrl),
       title: Text(profile.name.isNotEmpty ? profile.name : (username ?? '')),
-      subtitle: username != null ? Text('@$username') : null,
-      trailing: trailing,
-      onTap: username != null
-          ? () => context.push(Routes.user(username))
+      subtitle: subtitle != null
+          ? Text(username != null ? '@$username · $subtitle' : subtitle!)
+          : username != null
+          ? Text('@$username')
           : null,
+      trailing: trailing,
+      onTap:
+          onTap ??
+          (username != null ? () => context.push(Routes.user(username)) : null),
     );
   }
 }

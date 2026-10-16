@@ -6,6 +6,7 @@ import '../../api/models/post.dart';
 import '../../app/router.dart';
 import '../../widgets/profile_tile.dart';
 import 'post_actions.dart';
+import 'post_trust.dart';
 import 'post_backgrounds.dart';
 
 /// Publicación a pantalla completa: video o imágenes de fondo, texto y acciones encima.
@@ -61,7 +62,9 @@ class _FullScreenPostState extends State<FullScreenPost> {
       fit: StackFit.expand,
       children: [
         ColoredBox(color: Colors.black),
-        if (post.media.isEmpty)
+        if (post.media.isEmpty && post.isArticle)
+          _ArticleView(post: post)
+        else if (post.media.isEmpty)
           _TextBackground(post: post)
         else if (post.media.first.isVideo)
           _VideoPlayer(
@@ -103,7 +106,7 @@ class _FullScreenPostState extends State<FullScreenPost> {
           left: 16,
           right: 80,
           bottom: 28,
-          child: _Caption(post: post),
+          child: _Caption(post: post, onChanged: widget.onChanged),
         ),
       ],
     );
@@ -111,9 +114,10 @@ class _FullScreenPostState extends State<FullScreenPost> {
 }
 
 class _Caption extends StatelessWidget {
-  const _Caption({required this.post});
+  const _Caption({required this.post, required this.onChanged});
 
   final Post post;
+  final void Function(Post) onChanged;
 
   @override
   Widget build(BuildContext context) {
@@ -147,6 +151,13 @@ class _Caption extends StatelessWidget {
             ],
           ),
         ),
+        const SizedBox(height: 4),
+        TrustBadges(post: post, light: true),
+        CorrectionNotice(post: post, light: true),
+        if (post.isPoll) ...[
+          const SizedBox(height: 6),
+          PollView(post: post, onChanged: onChanged, light: true),
+        ],
         if (post.isSponsored) ...[
           const SizedBox(height: 4),
           Container(
@@ -176,7 +187,7 @@ class _Caption extends StatelessWidget {
                 context.push(Routes.recipe(post.recipeLink!.targetId)),
           ),
         ],
-        if (post.title.isNotEmpty) ...[
+        if (post.title.isNotEmpty && !post.isArticle) ...[
           const SizedBox(height: 6),
           Text(
             post.title,
@@ -226,6 +237,46 @@ class _TextBackground extends StatelessWidget {
             style: TextStyle(color: bg.textColor, fontSize: 22, height: 1.4),
             textAlign: TextAlign.center,
           ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Artículo (v2 §8.1): lectura larga con desplazamiento propio.
+class _ArticleView extends StatelessWidget {
+  const _ArticleView({required this.post});
+
+  final Post post;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      color: const Color(0xFF14201B),
+      padding: const EdgeInsets.fromLTRB(20, 96, 20, 200),
+      child: SingleChildScrollView(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              post.title,
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 24,
+                fontWeight: FontWeight.w700,
+                height: 1.2,
+              ),
+            ),
+            const SizedBox(height: 12),
+            Text(
+              post.body,
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 16,
+                height: 1.5,
+              ),
+            ),
+          ],
         ),
       ),
     );
@@ -504,6 +555,8 @@ class PostCard extends StatelessWidget {
     'reel' => 'Reel',
     'photo' => 'Foto',
     'carousel' => 'Carrusel',
+    'article' => 'Artículo',
+    'poll' => 'Encuesta',
     _ => 'Texto',
   };
 }

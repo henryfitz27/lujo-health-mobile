@@ -25,6 +25,38 @@ class Relation {
   );
 }
 
+/// Ficha profesional visible en un perfil público (v2 §5.3).
+class ProfessionalPublic {
+  const ProfessionalPublic({
+    required this.specialty,
+    required this.description,
+    required this.country,
+    required this.verified,
+    required this.verifiedCredential,
+    required this.contactEmail,
+    required this.contactUrl,
+  });
+
+  factory ProfessionalPublic.fromJson(Map<String, dynamic> j) =>
+      ProfessionalPublic(
+        specialty: j['specialty'] as String? ?? '',
+        description: j['description'] as String? ?? '',
+        country: j['country'] as String? ?? '',
+        verified: j['verified'] as bool? ?? false,
+        verifiedCredential: j['verifiedCredential'] as String? ?? '',
+        contactEmail: j['contactEmail'] as String? ?? '',
+        contactUrl: j['contactUrl'] as String? ?? '',
+      );
+
+  final String specialty;
+  final String description;
+  final String country;
+  final bool verified;
+  final String verifiedCredential;
+  final String contactEmail;
+  final String contactUrl;
+}
+
 /// Perfil público de otro usuario (`GET /users/{username}`).
 class PublicProfile {
   const PublicProfile({
@@ -38,6 +70,8 @@ class PublicProfile {
     required this.followers,
     required this.following,
     required this.relation,
+    this.accountKind = 'user',
+    this.professional,
   });
 
   final String id;
@@ -50,8 +84,11 @@ class PublicProfile {
   final int followers;
   final int following;
   final Relation relation;
+  final String accountKind;
+  final ProfessionalPublic? professional;
 
   bool get isPrivate => visibility == 'private';
+  bool get isVerifiedProfessional => professional?.verified ?? false;
 
   PublicProfile withRelation(Relation relation) => PublicProfile(
     id: id,
@@ -64,6 +101,8 @@ class PublicProfile {
     followers: followers,
     following: following,
     relation: relation,
+    accountKind: accountKind,
+    professional: professional,
   );
 
   factory PublicProfile.fromJson(Map<String, dynamic> json) {
@@ -81,6 +120,12 @@ class PublicProfile {
       relation: Relation.fromJson(
         json['relation'] as Map<String, dynamic>? ?? const {},
       ),
+      accountKind: json['accountKind'] as String? ?? 'user',
+      professional: json['professional'] is Map<String, dynamic>
+          ? ProfessionalPublic.fromJson(
+              json['professional'] as Map<String, dynamic>,
+            )
+          : null,
     );
   }
 }

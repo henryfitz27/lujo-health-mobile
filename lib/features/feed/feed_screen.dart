@@ -100,14 +100,14 @@ class _FeedScreenState extends ConsumerState<FeedScreen>
             onPressed: () => context.push(Routes.explore),
           ),
           IconButton(
+            tooltip: 'Comunidades',
+            icon: const Icon(Icons.groups_outlined),
+            onPressed: () => context.push(Routes.communities),
+          ),
+          IconButton(
             tooltip: 'Crear publicación',
             icon: const Icon(Icons.add_box_outlined),
             onPressed: _create,
-          ),
-          IconButton(
-            tooltip: 'Mi cuaderno',
-            icon: const Icon(Icons.book_outlined),
-            onPressed: () => context.push(Routes.notebook),
           ),
           Consumer(
             builder: (context, ref, _) {

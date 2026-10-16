@@ -147,6 +147,28 @@ class ProfileScreen extends ConsumerWidget {
                 },
               ),
               ListTile(
+                leading: const Icon(Icons.insights_outlined),
+                title: const Text('Panel de creador'),
+                subtitle: const Text('Estadísticas, series y calendario'),
+                trailing: const Icon(Icons.chevron_right),
+                onTap: () => context.push(Routes.creator),
+              ),
+              ListTile(
+                leading: const Icon(Icons.verified_outlined),
+                title: const Text('Cuenta y perfil profesional'),
+                subtitle: const Text(
+                  'Tipo de cuenta, credencial y verificación',
+                ),
+                trailing: const Icon(Icons.chevron_right),
+                onTap: () => context.push(Routes.professional),
+              ),
+              ListTile(
+                leading: const Icon(Icons.groups_outlined),
+                title: const Text('Comunidades'),
+                trailing: const Icon(Icons.chevron_right),
+                onTap: () => context.push(Routes.communities),
+              ),
+              ListTile(
                 leading: const Icon(Icons.book_outlined),
                 title: const Text('Mi cuaderno'),
                 subtitle: const Text('Notas, guardados, colecciones y listas'),

@@ -2,8 +2,15 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../api/models/community.dart';
+
 import '../auth/auth_service.dart';
 import '../features/explore/explore_screen.dart';
+import '../features/communities/communities_screen.dart';
+import '../features/communities/community_form_screen.dart';
+import '../features/communities/community_screen.dart';
+import '../features/creator/creator_screen.dart';
+import '../features/creator/series_screen.dart';
 import '../features/feed/feed_screen.dart';
 import '../features/login/login_screen.dart';
 import '../features/media/episode_screen.dart';
@@ -33,6 +40,7 @@ import '../features/posts/create_post_screen.dart';
 import '../features/posts/my_posts_screen.dart';
 import '../features/posts/post_screen.dart';
 import '../features/profile/edit_profile_screen.dart';
+import '../features/profile/professional_screen.dart';
 import '../features/profile/profile_screen.dart';
 import '../features/recipes/cook_mode_screen.dart';
 import '../features/recipes/create_recipe_screen.dart';
@@ -58,6 +66,15 @@ abstract final class Routes {
   static const recipes = '/recipes';
   static const explore = '/recipes';
   static const createPost = '/posts/new';
+  static String createPostIn(String communityId, String communityName) =>
+      '/posts/new?community=$communityId&communityName=${Uri.encodeQueryComponent(communityName)}';
+  static const communities = '/communities';
+  static const newCommunity = '/communities/new';
+  static String community(String slug) => '/communities/$slug';
+  static String editCommunity(String slug) => '/communities/$slug/edit';
+  static const creator = '/profile/creator';
+  static const professional = '/profile/professional';
+  static String series(String id) => '/series/$id';
   static const myPosts = '/profile/posts';
   static String post(String id) => '/posts/$id';
   static const createRecipe = '/recipes/new';
@@ -296,7 +313,41 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: Routes.createPost,
         parentNavigatorKey: _rootKey,
-        builder: (_, _) => const CreatePostScreen(),
+        builder: (_, state) => CreatePostScreen(
+          communityId: state.uri.queryParameters['community'],
+          communityName: state.uri.queryParameters['communityName'],
+        ),
+      ),
+      GoRoute(
+        path: Routes.communities,
+        parentNavigatorKey: _rootKey,
+        builder: (_, _) => const CommunitiesScreen(),
+        routes: [
+          GoRoute(
+            path: 'new',
+            parentNavigatorKey: _rootKey,
+            builder: (_, _) => const CommunityFormScreen(),
+          ),
+          GoRoute(
+            path: ':slug',
+            parentNavigatorKey: _rootKey,
+            builder: (_, state) =>
+                CommunityScreen(slug: state.pathParameters['slug']!),
+            routes: [
+              GoRoute(
+                path: 'edit',
+                parentNavigatorKey: _rootKey,
+                builder: (_, state) =>
+                    CommunityFormScreen(existing: state.extra as Community?),
+              ),
+            ],
+          ),
+        ],
+      ),
+      GoRoute(
+        path: '/series/:id',
+        parentNavigatorKey: _rootKey,
+        builder: (_, state) => SeriesScreen(id: state.pathParameters['id']!),
       ),
       GoRoute(
         path: '/posts/:id',
@@ -311,6 +362,11 @@ final routerProvider = Provider<GoRouter>((ref) {
           GoRoute(path: 'posts', builder: (_, _) => const MyPostsScreen()),
           GoRoute(path: 'recipes', builder: (_, _) => const MyRecipesScreen()),
           GoRoute(path: 'edit', builder: (_, _) => const EditProfileScreen()),
+          GoRoute(path: 'creator', builder: (_, _) => const CreatorScreen()),
+          GoRoute(
+            path: 'professional',
+            builder: (_, _) => const ProfessionalScreen(),
+          ),
           GoRoute(
             path: 'requests',
             builder: (_, _) => const FollowRequestsScreen(),

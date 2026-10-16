@@ -103,6 +103,59 @@ class PostLink {
   final String url;
 }
 
+/// Encuesta (v2 §8.1) con el voto del usuario.
+class PollOption {
+  const PollOption({
+    required this.id,
+    required this.text,
+    required this.votesCount,
+  });
+
+  factory PollOption.fromJson(Map<String, dynamic> j) => PollOption(
+    id: j['id'] as String,
+    text: j['text'] as String? ?? '',
+    votesCount: j['votesCount'] as int? ?? 0,
+  );
+
+  final String id;
+  final String text;
+  final int votesCount;
+}
+
+class Poll {
+  const Poll({
+    required this.multiple,
+    required this.closesAt,
+    required this.votesCount,
+    required this.options,
+    required this.viewerOptionIds,
+  });
+
+  factory Poll.fromJson(Map<String, dynamic> j) => Poll(
+    multiple: j['multiple'] as bool? ?? false,
+    closesAt: j['closesAt'] is String
+        ? DateTime.tryParse(j['closesAt'] as String)
+        : null,
+    votesCount: j['votesCount'] as int? ?? 0,
+    options: [
+      for (final o in j['options'] as List? ?? const [])
+        PollOption.fromJson(o as Map<String, dynamic>),
+    ],
+    viewerOptionIds: [
+      for (final id in j['viewerOptionIds'] as List? ?? const []) id as String,
+    ],
+  );
+
+  final bool multiple;
+  final DateTime? closesAt;
+  final int votesCount;
+  final List<PollOption> options;
+  final List<String> viewerOptionIds;
+
+  bool get closed => closesAt != null && closesAt!.isBefore(DateTime.now());
+  bool get voted => viewerOptionIds.isNotEmpty;
+}
+
 class Post {
   const Post({
     required this.id,
@@ -126,6 +179,16 @@ class Post {
     required this.links,
     required this.counts,
     required this.viewer,
+    this.communityId,
+    this.seriesId,
+    this.claimType = 'none',
+    this.contentNature = 'experience',
+    this.reviewStatus = 'none',
+    this.reviewNote = '',
+    this.correctionNote = '',
+    this.correctionsCount = 0,
+    this.authorVerified = false,
+    this.poll,
   });
 
   factory Post.fromJson(Map<String, dynamic> json) => Post(
@@ -158,6 +221,18 @@ class Post {
     ],
     counts: PostCounts.fromJson(json['counts'] as Map<String, dynamic>?),
     viewer: PostViewer.fromJson(json['viewer'] as Map<String, dynamic>?),
+    communityId: json['communityId'] as String?,
+    seriesId: json['seriesId'] as String?,
+    claimType: json['claimType'] as String? ?? 'none',
+    contentNature: json['contentNature'] as String? ?? 'experience',
+    reviewStatus: json['reviewStatus'] as String? ?? 'none',
+    reviewNote: json['reviewNote'] as String? ?? '',
+    correctionNote: json['correctionNote'] as String? ?? '',
+    correctionsCount: json['correctionsCount'] as int? ?? 0,
+    authorVerified: json['authorVerified'] as bool? ?? false,
+    poll: json['poll'] is Map<String, dynamic>
+        ? Poll.fromJson(json['poll'] as Map<String, dynamic>)
+        : null,
   );
 
   static List<Post> listFromJson(Object? items) => [
@@ -189,8 +264,41 @@ class Post {
   final List<PostLink> links;
   final PostCounts counts;
   final PostViewer viewer;
+  final String? communityId;
+  final String? seriesId;
+  final String claimType;
+  final String contentNature;
+  final String reviewStatus;
+  final String reviewNote;
+  final String correctionNote;
+  final int correctionsCount;
+  final bool authorVerified;
+  final Poll? poll;
 
   bool get isReel => type == 'reel';
+  bool get isArticle => type == 'article';
+  bool get isPoll => type == 'poll';
+
+  /// Etiqueta de confianza visible (v2 §22.1); vacía si no aplica.
+  String get trustLabel => switch (reviewStatus) {
+    'approved' => 'Revisado',
+    'pending' || 'in_review' => 'En revisión',
+    'changes_requested' => 'Corrección pendiente',
+    _ => '',
+  };
+
+  String get claimLabel => switch (claimType) {
+    'traditional' => 'Uso tradicional',
+    'preliminary' => 'Evidencia preliminar',
+    'clinical' => 'Evidencia clínica',
+    _ => '',
+  };
+
+  String get natureLabel => switch (contentNature) {
+    'educational' => 'Educativo',
+    'promotion' => 'Promoción',
+    _ => 'Experiencia personal',
+  };
 
   PostLink? get recipeLink {
     for (final l in links) {
@@ -223,6 +331,16 @@ class Post {
     links: links,
     counts: counts,
     viewer: viewer,
+    communityId: communityId,
+    seriesId: seriesId,
+    claimType: claimType,
+    contentNature: contentNature,
+    reviewStatus: reviewStatus,
+    reviewNote: reviewNote,
+    correctionNote: correctionNote,
+    correctionsCount: correctionsCount,
+    authorVerified: authorVerified,
+    poll: poll,
   );
 }
 

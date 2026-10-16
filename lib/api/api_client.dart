@@ -5,6 +5,8 @@ import '../auth/auth_service.dart';
 import '../config/env.dart';
 import 'models/account.dart';
 import 'models/catalog_item.dart';
+import 'models/community.dart';
+import 'models/creator.dart';
 import 'models/me.dart';
 import 'models/media.dart';
 import 'models/notebook.dart';
@@ -729,6 +731,208 @@ class ApiClient {
       Episode.fromJson(
         await _request(add ? 'POST' : 'DELETE', '/media/episodes/$id/queue'),
       );
+
+  // --- Comunidades (v2 §15) ---
+
+  Future<List<Community>> communities({
+    String query = '',
+    String kind = '',
+    bool mine = false,
+    int limit = 30,
+  }) async => Community.listFromJson(
+    (await _get(
+      '/communities',
+      query: {
+        if (query.isNotEmpty) 'q': query,
+        if (kind.isNotEmpty) 'kind': kind,
+        if (mine) 'mine': 'true',
+        'limit': limit,
+      },
+    ))['items'],
+  );
+
+  Future<Community> community(String slug) async =>
+      Community.fromJson(await _get('/communities/$slug'));
+
+  Future<Community> createCommunity(Map<String, dynamic> input) async =>
+      Community.fromJson(await _request('POST', '/communities', data: input));
+
+  Future<Community> updateCommunity(
+    String slug,
+    Map<String, dynamic> input,
+  ) async => Community.fromJson(
+    await _request('PUT', '/communities/$slug', data: input),
+  );
+
+  Future<Community> joinCommunity(String slug, {required bool join}) async =>
+      Community.fromJson(
+        await _request(join ? 'POST' : 'DELETE', '/communities/$slug/join'),
+      );
+
+  Future<List<CommunityMember>> communityMembers(
+    String slug, {
+    String status = 'active',
+  }) async => [
+    for (final m
+        in (await _get(
+                  '/communities/$slug/members',
+                  query: {'status': status, 'limit': 100},
+                ))['items']
+                as List? ??
+            const [])
+      CommunityMember.fromJson(m as Map<String, dynamic>),
+  ];
+
+  Future<void> setCommunityMember(
+    String slug,
+    String userId, {
+    String? role,
+    String? status,
+  }) => _request(
+    'POST',
+    '/communities/$slug/members/$userId',
+    data: {'role': ?role, 'status': ?status},
+  );
+
+  Future<List<Post>> communityPosts(
+    String slug, {
+    int limit = 20,
+    int offset = 0,
+  }) async => Post.listFromJson(
+    (await _get(
+      '/communities/$slug/posts',
+      query: {'limit': limit, 'offset': offset},
+    ))['items'],
+  );
+
+  Future<List<Topic>> communityTopics(String slug) async => [
+    for (final t
+        in (await _get('/communities/$slug/topics'))['items'] as List? ??
+            const [])
+      Topic.fromJson(t as Map<String, dynamic>),
+  ];
+
+  Future<Topic> createTopic(
+    String slug, {
+    required String title,
+    String body = '',
+    bool pinned = false,
+  }) async => Topic.fromJson(
+    await _request(
+      'POST',
+      '/communities/$slug/topics',
+      data: {'title': title, 'body': body, 'pinned': pinned},
+    ),
+  );
+
+  Future<void> deleteTopic(String slug, String id) =>
+      _request('DELETE', '/communities/$slug/topics/$id');
+
+  Future<List<SharedRecipe>> communityRecipes(String slug) async => [
+    for (final r
+        in (await _get(
+                  '/communities/$slug/recipes',
+                  query: {'limit': 60},
+                ))['items']
+                as List? ??
+            const [])
+      SharedRecipe.fromJson(r as Map<String, dynamic>),
+  ];
+
+  Future<void> shareRecipeToCommunity(String slug, String recipeId) => _request(
+    'POST',
+    '/communities/$slug/recipes',
+    data: {'recipeId': recipeId},
+  );
+
+  Future<void> unshareRecipeFromCommunity(String slug, String recipeId) =>
+      _request('DELETE', '/communities/$slug/recipes/$recipeId');
+
+  // --- Encuestas, series y panel de creador ---
+
+  Future<Post> vote(String postId, List<String> optionIds) async =>
+      Post.fromJson(
+        await _request(
+          'POST',
+          '/posts/$postId/poll/votes',
+          data: {'optionIds': optionIds},
+        ),
+      );
+
+  Future<List<Series>> mySeries() async =>
+      Series.listFromJson((await _get('/me/series'))['items']);
+
+  Future<List<Series>> userSeries(String username) async =>
+      Series.listFromJson((await _get('/users/$username/series'))['items']);
+
+  Future<Series> createSeries(String title, {String description = ''}) async =>
+      Series.fromJson(
+        await _request(
+          'POST',
+          '/me/series',
+          data: {'title': title, 'description': description},
+        ),
+      );
+
+  Future<Series> updateSeries(
+    String id,
+    String title, {
+    String description = '',
+  }) async => Series.fromJson(
+    await _request(
+      'PUT',
+      '/me/series/$id',
+      data: {'title': title, 'description': description},
+    ),
+  );
+
+  Future<void> deleteSeries(String id) => _request('DELETE', '/me/series/$id');
+
+  Future<(Series, List<Post>)> series(String id) async {
+    final json = await _get('/series/$id');
+    return (
+      Series.fromJson(json['series'] as Map<String, dynamic>),
+      Post.listFromJson(json['posts']),
+    );
+  }
+
+  Future<CreatorStats> creatorStats({int days = 30}) async =>
+      CreatorStats.fromJson(
+        await _get('/me/creator/stats', query: {'days': days}),
+      );
+
+  Future<List<Post>> creatorCalendar({DateTime? from, DateTime? to}) async =>
+      Post.listFromJson(
+        (await _get(
+          '/me/creator/calendar',
+          query: {
+            if (from != null) 'from': from.toUtc().toIso8601String(),
+            if (to != null) 'to': to.toUtc().toIso8601String(),
+          },
+        ))['items'],
+      );
+
+  // --- Perfil profesional y verificación (v2 §5.3) ---
+
+  Future<ProfessionalState> myProfessional() async =>
+      ProfessionalState.fromJson(await _get('/me/professional'));
+
+  Future<ProfessionalState> updateProfessional(
+    Map<String, dynamic> input,
+  ) async => ProfessionalState.fromJson(
+    await _request('PUT', '/me/professional', data: input),
+  );
+
+  Future<VerificationRequest> requestVerification({
+    String documentUrl = '',
+    String note = '',
+  }) async => VerificationRequest.fromJson(
+    await _request(
+      'POST',
+      '/me/verification',
+      data: {'documentUrl': documentUrl, 'note': note},
+    ),
+  );
 
   // --- Transporte ---
 
