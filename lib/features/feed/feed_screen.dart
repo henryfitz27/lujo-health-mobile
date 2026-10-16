@@ -32,6 +32,20 @@ class FeedScreen extends ConsumerStatefulWidget {
 class _FeedScreenState extends ConsumerState<FeedScreen>
     with SingleTickerProviderStateMixin {
   late final TabController _tabs = TabController(length: 3, vsync: this);
+  final _forYou = GlobalKey<_FeedPagerState>();
+  final _following = GlobalKey<_FeedPagerState>();
+  final _explore = GlobalKey<_ExploreGridState>();
+
+  /// Abre el editor y, si se creó algo, recarga las tres pestañas.
+  Future<void> _create() async {
+    final created = await context.push<Post>(Routes.createPost);
+    if (created == null || !mounted) return;
+    await Future.wait([
+      _forYou.currentState?._refresh() ?? Future.value(),
+      _following.currentState?._refresh() ?? Future.value(),
+      _explore.currentState?._reload() ?? Future.value(),
+    ]);
+  }
 
   @override
   void initState() {
@@ -86,7 +100,7 @@ class _FeedScreenState extends ConsumerState<FeedScreen>
           IconButton(
             tooltip: 'Crear publicación',
             icon: const Icon(Icons.add_box_outlined),
-            onPressed: () => context.push(Routes.createPost),
+            onPressed: _create,
           ),
           IconButton(
             tooltip: 'Mi perfil',
@@ -99,9 +113,13 @@ class _FeedScreenState extends ConsumerState<FeedScreen>
         controller: _tabs,
         physics: const NeverScrollableScrollPhysics(),
         children: [
-          _FeedPager(kind: 'for-you', visible: _tabs.index == 0),
-          _FeedPager(kind: 'following', visible: _tabs.index == 1),
-          const _ExploreGrid(),
+          _FeedPager(key: _forYou, kind: 'for-you', visible: _tabs.index == 0),
+          _FeedPager(
+            key: _following,
+            kind: 'following',
+            visible: _tabs.index == 1,
+          ),
+          _ExploreGrid(key: _explore),
         ],
       ),
     );
@@ -109,7 +127,7 @@ class _FeedScreenState extends ConsumerState<FeedScreen>
 }
 
 class _FeedPager extends ConsumerStatefulWidget {
-  const _FeedPager({required this.kind, required this.visible});
+  const _FeedPager({super.key, required this.kind, required this.visible});
 
   final String kind;
   final bool visible;
@@ -231,7 +249,7 @@ class _FeedPagerState extends ConsumerState<_FeedPager>
 }
 
 class _ExploreGrid extends ConsumerStatefulWidget {
-  const _ExploreGrid();
+  const _ExploreGrid({super.key});
 
   @override
   ConsumerState<_ExploreGrid> createState() => _ExploreGridState();
@@ -243,6 +261,14 @@ class _ExploreGridState extends ConsumerState<_ExploreGrid>
 
   @override
   bool get wantKeepAlive => true;
+
+  Future<void> _reload() {
+    final next = _load();
+    setState(() {
+      _future = next;
+    });
+    return next;
+  }
 
   Future<(List<Post>, List<RecipeSummary>)> _load() async {
     final api = ref.read(apiClientProvider);
@@ -262,7 +288,7 @@ class _ExploreGridState extends ConsumerState<_ExploreGrid>
         if (snap.hasError) {
           return _Empty(
             message: 'No se pudo cargar Explorar.',
-            onRetry: () async => setState(() => _future = _load()),
+            onRetry: _reload,
           );
         }
         if (!snap.hasData) {
@@ -274,11 +300,11 @@ class _ExploreGridState extends ConsumerState<_ExploreGrid>
         if (posts.isEmpty && recipes.isEmpty) {
           return _Empty(
             message: 'Aún no hay publicaciones públicas.',
-            onRetry: () async => setState(() => _future = _load()),
+            onRetry: _reload,
           );
         }
         return RefreshIndicator(
-          onRefresh: () async => setState(() => _future = _load()),
+          onRefresh: _reload,
           child: CustomScrollView(
             slivers: [
               SliverPadding(

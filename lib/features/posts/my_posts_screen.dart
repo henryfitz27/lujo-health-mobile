@@ -23,7 +23,12 @@ class _MyPostsScreenState extends ConsumerState<MyPostsScreen> {
   Future<List<Post>> _load() =>
       ref.read(apiClientProvider).myPosts(status: _status);
 
-  void _reload() => setState(() => _future = _load());
+  void _reload() {
+    final next = _load();
+    setState(() {
+      _future = next;
+    });
+  }
 
   Future<void> _action(Post post, String action) async {
     final api = ref.read(apiClientProvider);

@@ -25,7 +25,12 @@ class _MyRecipesScreenState extends ConsumerState<MyRecipesScreen> {
     return _saved ? api.savedRecipes() : api.myRecipes();
   }
 
-  void _reload() => setState(() => _future = _load());
+  void _reload() {
+    final next = _load();
+    setState(() {
+      _future = next;
+    });
+  }
 
   Future<void> _action(RecipeSummary r, String action) async {
     final api = ref.read(apiClientProvider);
