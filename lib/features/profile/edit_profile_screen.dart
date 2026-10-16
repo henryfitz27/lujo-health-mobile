@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../api/api_client.dart';
+import '../../widgets/avatar_picker.dart';
 import '../../widgets/catalog_chips.dart';
 
 class EditProfileScreen extends ConsumerStatefulWidget {
@@ -100,6 +101,8 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
         child: ListView(
           padding: const EdgeInsets.all(16),
           children: [
+            const Center(child: AvatarPicker()),
+            const SizedBox(height: 16),
             TextFormField(
               controller: _username,
               decoration: InputDecoration(

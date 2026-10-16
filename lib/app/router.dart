@@ -9,6 +9,7 @@ import '../features/people/people_screen.dart';
 import '../features/people/user_profile_screen.dart';
 import '../features/profile/edit_profile_screen.dart';
 import '../features/profile/profile_screen.dart';
+import '../features/settings/settings_screen.dart';
 import '../features/splash/splash_screen.dart';
 
 abstract final class Routes {
@@ -18,6 +19,7 @@ abstract final class Routes {
   static const profile = '/profile';
   static const editProfile = '/profile/edit';
   static const followRequests = '/profile/requests';
+  static const settings = '/profile/settings';
   static const people = '/people';
   static String user(String username) => '/users/$username';
 }
@@ -56,6 +58,7 @@ final routerProvider = Provider<GoRouter>((ref) {
             path: 'requests',
             builder: (_, _) => const FollowRequestsScreen(),
           ),
+          GoRoute(path: 'settings', builder: (_, _) => const SettingsScreen()),
         ],
       ),
       GoRoute(path: Routes.people, builder: (_, _) => const PeopleScreen()),

@@ -3,9 +3,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../api/api_client.dart';
+import '../../account/device_registration.dart';
 import '../../api/models/me.dart';
 import '../../app/router.dart';
-import '../../auth/auth_service.dart';
 import '../../widgets/profile_tile.dart';
 
 class ProfileScreen extends ConsumerWidget {
@@ -22,6 +22,8 @@ class ProfileScreen extends ConsumerWidget {
         context.go(Routes.onboarding);
       }
     });
+    // Registra esta instalación como dispositivo del usuario (una vez por sesión de app).
+    ref.watch(deviceRegistrationProvider);
 
     return Scaffold(
       appBar: AppBar(
@@ -38,9 +40,9 @@ class ProfileScreen extends ConsumerWidget {
             onPressed: () => context.push(Routes.editProfile),
           ),
           IconButton(
-            tooltip: 'Cerrar sesión',
-            icon: const Icon(Icons.logout),
-            onPressed: () => ref.read(authServiceProvider).signOut(),
+            tooltip: 'Ajustes',
+            icon: const Icon(Icons.settings_outlined),
+            onPressed: () => context.push(Routes.settings),
           ),
         ],
       ),

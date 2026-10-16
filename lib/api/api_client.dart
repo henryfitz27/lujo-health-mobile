@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../auth/auth_service.dart';
 import '../config/env.dart';
+import 'models/account.dart';
 import 'models/catalog_item.dart';
 import 'models/me.dart';
 import 'models/profile.dart';
@@ -58,6 +59,65 @@ class ApiClient {
 
   Future<Catalogs> getCatalogs() async =>
       Catalogs.fromJson(await _get('/catalogs'));
+
+  /// Sube la foto de perfil (JPG, PNG, WebP o GIF, máx. 5 MB) y devuelve el perfil actualizado.
+  Future<Me> uploadAvatar(String filePath) async {
+    final form = FormData.fromMap({
+      'file': await MultipartFile.fromFile(filePath),
+    });
+    return Me.fromJson(await _request('POST', '/me/avatar', data: form));
+  }
+
+  Future<Me> deleteAvatar() async =>
+      Me.fromJson(await _request('DELETE', '/me/avatar'));
+
+  Future<void> deleteMe() => _request('DELETE', '/me');
+
+  Future<NotificationPreferences> getNotificationPreferences() async =>
+      NotificationPreferences.fromJson(
+        await _get('/me/notification-preferences'),
+      );
+
+  Future<NotificationPreferences> updateNotificationPreferences(
+    NotificationPreferences prefs,
+  ) async => NotificationPreferences.fromJson(
+    await _request('PUT', '/me/notification-preferences', data: prefs.toJson()),
+  );
+
+  Future<List<Device>> devices() async =>
+      Device.listFromJson((await _get('/me/devices'))['items']);
+
+  Future<Device> registerDevice({
+    required String installationId,
+    required String platform,
+    required String deviceName,
+    required String appVersion,
+    String? pushToken,
+  }) async => Device.fromJson(
+    await _request(
+      'PUT',
+      '/me/devices',
+      data: {
+        'installationId': installationId,
+        'platform': platform,
+        'deviceName': deviceName,
+        'appVersion': appVersion,
+        'pushToken': ?pushToken,
+      },
+    ),
+  );
+
+  Future<void> removeDevice(String id) => _request('DELETE', '/me/devices/$id');
+
+  Future<List<Session>> sessions() async =>
+      Session.listFromJson((await _get('/me/sessions'))['items']);
+
+  Future<void> revokeSession(String id) =>
+      _request('DELETE', '/me/sessions/$id');
+
+  /// Cierra todas las sesiones, incluida la actual. Devuelve cuántas se cerraron.
+  Future<int> revokeAllSessions() async =>
+      (await _request('DELETE', '/me/sessions'))['revoked'] as int? ?? 0;
 
   // --- Otros perfiles ---
 
@@ -166,6 +226,9 @@ class MeNotifier extends AsyncNotifier<Me> {
     state = AsyncData(me);
     return me;
   }
+
+  /// Sustituye el estado con un perfil ya devuelto por la API (p. ej. tras subir el avatar).
+  void set(Me me) => state = AsyncData(me);
 }
 
 final meProvider = AsyncNotifierProvider<MeNotifier, Me>(MeNotifier.new);
