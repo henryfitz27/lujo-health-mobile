@@ -34,6 +34,8 @@ class Organization {
     required this.publishingModel,
     required this.lmsBaseUrl,
     required this.lmsResource,
+    required this.lmsWebUrl,
+    required this.lmsOrganizationSlug,
     required this.businessUrl,
     required this.storeUrl,
     required this.supportEmail,
@@ -60,6 +62,8 @@ class Organization {
       publishingModel: json['publishingModel'] as String? ?? 'community',
       lmsBaseUrl: integrations['lmsBaseUrl'] as String? ?? '',
       lmsResource: integrations['lmsResource'] as String? ?? '',
+      lmsWebUrl: integrations['lmsWebUrl'] as String? ?? '',
+      lmsOrganizationSlug: integrations['lmsOrganizationSlug'] as String? ?? '',
       businessUrl: integrations['businessUrl'] as String? ?? '',
       storeUrl: integrations['storeUrl'] as String? ?? '',
       supportEmail: integrations['supportEmail'] as String? ?? '',
@@ -79,6 +83,8 @@ class Organization {
   final String publishingModel;
   final String lmsBaseUrl;
   final String lmsResource;
+  final String lmsWebUrl;
+  final String lmsOrganizationSlug;
   final String businessUrl;
   final String storeUrl;
   final String supportEmail;

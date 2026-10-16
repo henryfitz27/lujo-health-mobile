@@ -26,6 +26,14 @@ class Env {
     defaultValue: 'http://10.0.2.2:8080',
   );
 
+  /// Trasciende: API resource de Logto del LMS (Upkademy) y, solo en desarrollo, la URL
+  /// base con la que el emulador alcanza al LMS (si está vacía se usa la de la organización).
+  static const lmsApiResource = String.fromEnvironment(
+    'LMS_API_RESOURCE',
+    defaultValue: 'https://api.upkademy.local',
+  );
+  static const lmsApiBaseUrl = String.fromEnvironment('LMS_API_BASE_URL');
+
   /// Firebase (push). Opcionales: sin ellos no se registra token FCM.
   static const firebaseApiKey = String.fromEnvironment('FIREBASE_API_KEY');
   static const firebaseAppId = String.fromEnvironment('FIREBASE_APP_ID');

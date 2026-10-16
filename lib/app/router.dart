@@ -7,7 +7,16 @@ import '../features/explore/explore_screen.dart';
 import '../features/feed/feed_screen.dart';
 import '../features/login/login_screen.dart';
 import '../features/media/episode_screen.dart';
-import '../features/media/learning_screen.dart';
+import '../features/learning/catalog_screen.dart';
+import '../features/learning/certificates_screen.dart';
+import '../features/learning/classroom_screen.dart';
+import '../features/learning/course_screen.dart';
+import '../features/learning/learning_screen.dart';
+import '../features/learning/lesson_screen.dart';
+import '../features/learning/lms_notifications_screen.dart';
+import '../features/learning/my_courses_screen.dart';
+import '../features/learning/paths_screen.dart';
+import '../features/learning/sessions_screen.dart';
 import '../features/media/media_screen.dart';
 import '../features/media/program_screen.dart';
 import '../features/notebook/collection_screen.dart';
@@ -71,6 +80,21 @@ abstract final class Routes {
   static const legal = '/profile/settings/legal';
   static const organizations = '/profile/organizations';
   static String program(String slug) => '/tv/programs/$slug';
+  static String learningCatalog({String query = ''}) => query.isEmpty
+      ? '/learning/catalog'
+      : '/learning/catalog?q=${Uri.encodeQueryComponent(query)}';
+  static String course(String slug) => '/learning/courses/$slug';
+  static const myCourses = '/learning/my-courses';
+  static String classroom(String enrollmentId) =>
+      '/learning/classroom/$enrollmentId';
+  static String lesson(String enrollmentId, String lessonId) =>
+      '/learning/classroom/$enrollmentId/lessons/$lessonId';
+  static const learningCertificates = '/learning/certificates';
+  static const learningSessions = '/learning/sessions';
+  static const learningPaths = '/learning/paths';
+  static String learningPath(String organizationSlug, String pathSlug) =>
+      '/learning/paths/$organizationSlug/$pathSlug';
+  static const learningNotifications = '/learning/notifications';
   static String episode(String id) => '/tv/episodes/$id';
 }
 
@@ -132,6 +156,63 @@ final routerProvider = Provider<GoRouter>((ref) {
               GoRoute(
                 path: Routes.learning,
                 builder: (_, _) => const LearningScreen(),
+                routes: [
+                  GoRoute(
+                    path: 'catalog',
+                    builder: (_, state) => CatalogScreen(
+                      initialQuery: state.uri.queryParameters['q'] ?? '',
+                    ),
+                  ),
+                  GoRoute(
+                    path: 'courses/:slug',
+                    builder: (_, state) =>
+                        CourseScreen(slug: state.pathParameters['slug']!),
+                  ),
+                  GoRoute(
+                    path: 'my-courses',
+                    builder: (_, _) => const MyCoursesScreen(),
+                  ),
+                  GoRoute(
+                    path: 'classroom/:id',
+                    builder: (_, state) => ClassroomScreen(
+                      enrollmentId: state.pathParameters['id']!,
+                    ),
+                    routes: [
+                      GoRoute(
+                        path: 'lessons/:lessonId',
+                        builder: (_, state) => LessonScreen(
+                          enrollmentId: state.pathParameters['id']!,
+                          lessonId: state.pathParameters['lessonId']!,
+                        ),
+                      ),
+                    ],
+                  ),
+                  GoRoute(
+                    path: 'certificates',
+                    builder: (_, _) => const CertificatesScreen(),
+                  ),
+                  GoRoute(
+                    path: 'sessions',
+                    builder: (_, _) => const SessionsScreen(),
+                  ),
+                  GoRoute(
+                    path: 'paths',
+                    builder: (_, _) => const PathsScreen(),
+                    routes: [
+                      GoRoute(
+                        path: ':org/:slug',
+                        builder: (_, state) => PathScreen(
+                          organizationSlug: state.pathParameters['org']!,
+                          pathSlug: state.pathParameters['slug']!,
+                        ),
+                      ),
+                    ],
+                  ),
+                  GoRoute(
+                    path: 'notifications',
+                    builder: (_, _) => const LmsNotificationsScreen(),
+                  ),
+                ],
               ),
             ],
           ),

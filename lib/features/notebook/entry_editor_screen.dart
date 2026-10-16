@@ -24,6 +24,8 @@ class EntryEditorScreen extends ConsumerStatefulWidget {
     this.ingredient,
     this.episode,
     this.episodeMs = 0,
+    this.courseRef = '',
+    this.courseTitle = '',
     this.initialCollectionId,
     this.initialTitle = '',
   });
@@ -35,6 +37,10 @@ class EntryEditorScreen extends ConsumerStatefulWidget {
   final EntryIngredientRef? ingredient;
   final EntryEpisodeRef? episode;
   final int episodeMs;
+
+  /// Curso o lección del LMS (`course`/`lesson`): referencia `enrollment:lesson` y título.
+  final String courseRef;
+  final String courseTitle;
   final String? initialCollectionId;
   final String initialTitle;
 
@@ -256,8 +262,8 @@ class _EntryEditorScreenState extends ConsumerState<EntryEditorScreen> {
         'episodeMs': widget.existing?.episode != null
             ? widget.existing!.episodeMs
             : widget.episodeMs,
-        'courseRef': widget.existing?.courseRef ?? '',
-        'courseTitle': widget.existing?.courseTitle ?? '',
+        'courseRef': widget.existing?.courseRef ?? widget.courseRef,
+        'courseTitle': widget.existing?.courseTitle ?? widget.courseTitle,
         'productId': widget.existing?.productId ?? '',
         'url': _url.text.trim(),
         'modifications': _modifications.text.trim(),

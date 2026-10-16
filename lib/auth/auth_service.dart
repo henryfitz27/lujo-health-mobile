@@ -13,7 +13,7 @@ class AuthService extends ChangeNotifier {
           endpoint: Env.logtoEndpoint,
           appId: Env.logtoAppId,
           scopes: [LogtoUserScope.email.value, LogtoUserScope.profile.value],
-          resources: [Env.logtoApiResource],
+          resources: [Env.logtoApiResource, Env.lmsApiResource],
         ),
         httpClient: http.Client(),
       );
@@ -45,6 +45,12 @@ class AuthService extends ChangeNotifier {
   /// Access token para la API de Go. Renueva con el refresh token si caducó.
   Future<String?> getApiAccessToken() async {
     final token = await _client.getAccessToken(resource: Env.logtoApiResource);
+    return token?.token;
+  }
+
+  /// Access token para la API del LMS (Trasciende), con la misma sesión.
+  Future<String?> getLmsAccessToken() async {
+    final token = await _client.getAccessToken(resource: Env.lmsApiResource);
     return token?.token;
   }
 
