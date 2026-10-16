@@ -6,7 +6,10 @@ import '../auth/auth_service.dart';
 import '../features/explore/explore_screen.dart';
 import '../features/feed/feed_screen.dart';
 import '../features/login/login_screen.dart';
+import '../features/media/episode_screen.dart';
+import '../features/media/learning_screen.dart';
 import '../features/media/media_screen.dart';
+import '../features/media/program_screen.dart';
 import '../features/notebook/collection_screen.dart';
 import '../features/notebook/entry_screen.dart';
 import '../features/notebook/notebook_screen.dart';
@@ -67,6 +70,8 @@ abstract final class Routes {
   static const sharedAccess = '/profile/settings/shared-access';
   static const legal = '/profile/settings/legal';
   static const organizations = '/profile/organizations';
+  static String program(String slug) => '/tv/programs/$slug';
+  static String episode(String id) => '/tv/episodes/$id';
 }
 
 final _rootKey = GlobalKey<NavigatorState>(debugLabel: 'root');
@@ -107,6 +112,18 @@ final routerProvider = Provider<GoRouter>((ref) {
               GoRoute(
                 path: Routes.media,
                 builder: (_, _) => const MediaScreen(),
+                routes: [
+                  GoRoute(
+                    path: 'programs/:slug',
+                    builder: (_, state) =>
+                        ProgramScreen(slug: state.pathParameters['slug']!),
+                  ),
+                  GoRoute(
+                    path: 'episodes/:id',
+                    builder: (_, state) =>
+                        EpisodeScreen(id: state.pathParameters['id']!),
+                  ),
+                ],
               ),
             ],
           ),

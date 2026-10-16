@@ -12,6 +12,9 @@ IconData entryKindIcon(String kind) => switch (kind) {
   'product' => Icons.shopping_bag_outlined,
   'questions' => Icons.help_outline,
   'checklist' => Icons.checklist_outlined,
+  'episode' => Icons.podcasts,
+  'course' => Icons.school_outlined,
+  'lesson' => Icons.menu_book_outlined,
   _ => Icons.sticky_note_2_outlined,
 };
 
@@ -139,6 +142,8 @@ class _Thumb extends StatelessWidget {
         ? entry.media!.url
         : entry.post?.thumbnailUrl.isNotEmpty == true
         ? entry.post!.thumbnailUrl
+        : entry.episode?.coverUrl.isNotEmpty == true
+        ? entry.episode!.coverUrl
         : entry.recipe?.coverUrl ?? '';
     final scheme = Theme.of(context).colorScheme;
     return ClipRRect(

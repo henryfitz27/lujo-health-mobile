@@ -205,6 +205,19 @@ class _EntryScreenState extends ConsumerState<EntryScreen> {
                   ? null
                   : () => context.push(Routes.recipe(entry.recipe!.id)),
             ),
+          if (entry.episode != null)
+            _SourceTile(
+              icon: Icons.podcasts,
+              title: entry.episode!.title,
+              subtitle: removed
+                  ? 'Este episodio ya no está disponible.'
+                  : '${entry.episode!.programTitle} · minuto ${(entry.episodeMs ~/ 60000)}:${((entry.episodeMs ~/ 1000) % 60).toString().padLeft(2, '0')}',
+              imageUrl: entry.episode!.coverUrl,
+              removed: removed,
+              onTap: removed
+                  ? null
+                  : () => context.push(Routes.episode(entry.episode!.id)),
+            ),
           if (entry.ingredient != null)
             _SourceTile(
               icon: Icons.eco_outlined,

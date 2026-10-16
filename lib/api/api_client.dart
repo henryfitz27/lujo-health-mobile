@@ -6,6 +6,7 @@ import '../config/env.dart';
 import 'models/account.dart';
 import 'models/catalog_item.dart';
 import 'models/me.dart';
+import 'models/media.dart';
 import 'models/notebook.dart';
 import 'models/organization.dart';
 import 'models/post.dart';
@@ -672,6 +673,62 @@ class ApiClient {
 
   Future<Me> joinOrganization(String slug) async =>
       Me.fromJson(await _request('POST', '/organizations/$slug/join'));
+
+  // --- Health TV ---
+
+  Future<MediaHome> mediaHome() async =>
+      MediaHome.fromJson(await _get('/media/home'));
+
+  Future<(Program, List<Season>)> program(String slug) async {
+    final json = await _get('/media/programs/$slug');
+    return (
+      Program.fromJson(json['program'] as Map<String, dynamic>),
+      [
+        for (final s in json['seasons'] as List? ?? const [])
+          Season.fromJson(s as Map<String, dynamic>),
+      ],
+    );
+  }
+
+  Future<List<Episode>> programEpisodes(String slug) async =>
+      Episode.listFromJson(
+        (await _get(
+          '/media/programs/$slug/episodes',
+          query: {'limit': 100},
+        ))['items'],
+      );
+
+  Future<Program> followProgram(String slug, {required bool follow}) async =>
+      Program.fromJson(
+        await _request(
+          follow ? 'POST' : 'DELETE',
+          '/media/programs/$slug/follow',
+        ),
+      );
+
+  Future<List<Episode>> searchEpisodes(String q) async => Episode.listFromJson(
+    (await _get('/media/episodes', query: {'q': q, 'limit': 30}))['items'],
+  );
+
+  Future<Episode> episode(String id) async =>
+      Episode.fromJson(await _get('/media/episodes/$id'));
+
+  Future<Playback> saveEpisodeProgress(
+    String id, {
+    required int positionMs,
+    bool completed = false,
+  }) async => Playback.fromJson(
+    await _request(
+      'POST',
+      '/media/episodes/$id/progress',
+      data: {'positionMs': positionMs, 'completed': completed},
+    ),
+  );
+
+  Future<Episode> queueEpisode(String id, {required bool add}) async =>
+      Episode.fromJson(
+        await _request(add ? 'POST' : 'DELETE', '/media/episodes/$id/queue'),
+      );
 
   // --- Transporte ---
 

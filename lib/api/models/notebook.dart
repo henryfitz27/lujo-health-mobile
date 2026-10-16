@@ -23,6 +23,9 @@ String entryKindLabel(String kind) => switch (kind) {
   'product' => 'Producto',
   'questions' => 'Preguntas',
   'checklist' => 'Lista',
+  'episode' => 'Episodio',
+  'course' => 'Curso',
+  'lesson' => 'Lección',
   _ => kind,
 };
 
@@ -171,6 +174,47 @@ class EntryRecipeRef {
   };
 }
 
+class EntryEpisodeRef {
+  const EntryEpisodeRef({
+    required this.id,
+    required this.title,
+    required this.programTitle,
+    required this.programSlug,
+    required this.coverUrl,
+    required this.status,
+    required this.durationMs,
+  });
+
+  factory EntryEpisodeRef.fromJson(Map<String, dynamic> json) =>
+      EntryEpisodeRef(
+        id: json['id'] as String,
+        title: json['title'] as String? ?? '',
+        programTitle: json['programTitle'] as String? ?? '',
+        programSlug: json['programSlug'] as String? ?? '',
+        coverUrl: json['coverUrl'] as String? ?? '',
+        status: json['status'] as String? ?? '',
+        durationMs: json['durationMs'] as int? ?? 0,
+      );
+
+  final String id;
+  final String title;
+  final String programTitle;
+  final String programSlug;
+  final String coverUrl;
+  final String status;
+  final int durationMs;
+
+  Map<String, dynamic> toJson() => {
+    'id': id,
+    'title': title,
+    'programTitle': programTitle,
+    'programSlug': programSlug,
+    'coverUrl': coverUrl,
+    'status': status,
+    'durationMs': durationMs,
+  };
+}
+
 class EntryIngredientRef {
   const EntryIngredientRef({
     required this.id,
@@ -203,6 +247,10 @@ class NotebookEntry {
     required this.post,
     required this.recipe,
     required this.ingredient,
+    this.episode,
+    this.episodeMs = 0,
+    this.courseRef = '',
+    this.courseTitle = '',
     required this.productId,
     required this.url,
     required this.modifications,
@@ -242,6 +290,12 @@ class NotebookEntry {
         : EntryIngredientRef.fromJson(
             json['ingredient'] as Map<String, dynamic>,
           ),
+    episode: json['episode'] == null
+        ? null
+        : EntryEpisodeRef.fromJson(json['episode'] as Map<String, dynamic>),
+    episodeMs: json['episodeMs'] as int? ?? 0,
+    courseRef: json['courseRef'] as String? ?? '',
+    courseTitle: json['courseTitle'] as String? ?? '',
     productId: json['productId'] as String? ?? '',
     url: json['url'] as String? ?? '',
     modifications: json['modifications'] as String? ?? '',
@@ -291,6 +345,10 @@ class NotebookEntry {
   final EntryPostRef? post;
   final EntryRecipeRef? recipe;
   final EntryIngredientRef? ingredient;
+  final EntryEpisodeRef? episode;
+  final int episodeMs;
+  final String courseRef;
+  final String courseTitle;
   final String productId;
   final String url;
   final String modifications;
@@ -322,6 +380,8 @@ class NotebookEntry {
     }
     if (recipe != null) return recipe!.title;
     if (ingredient != null) return ingredient!.name;
+    if (episode != null) return episode!.title;
+    if (courseTitle.isNotEmpty) return courseTitle;
     if (url.isNotEmpty) return url;
     if (body.isNotEmpty) return body;
     if (transcript.isNotEmpty) return transcript;
@@ -340,6 +400,10 @@ class NotebookEntry {
     'post': post?.toJson(),
     'recipe': recipe?.toJson(),
     'ingredient': ingredient?.toJson(),
+    'episode': episode?.toJson(),
+    'episodeMs': episodeMs,
+    'courseRef': courseRef,
+    'courseTitle': courseTitle,
     'productId': productId,
     'url': url,
     'modifications': modifications,
@@ -369,6 +433,10 @@ class NotebookEntry {
     'postId': post?.id,
     'recipeId': recipe?.id,
     'ingredientId': ingredient?.id,
+    'episodeId': episode?.id,
+    'episodeMs': episodeMs,
+    'courseRef': courseRef,
+    'courseTitle': courseTitle,
     'productId': productId,
     'url': url,
     'modifications': modifications,
@@ -409,6 +477,10 @@ class NotebookEntry {
     post: post,
     recipe: recipe,
     ingredient: ingredient,
+    episode: episode,
+    episodeMs: episodeMs,
+    courseRef: courseRef,
+    courseTitle: courseTitle,
     productId: productId,
     url: url ?? this.url,
     modifications: modifications ?? this.modifications,

@@ -22,6 +22,8 @@ class EntryEditorScreen extends ConsumerStatefulWidget {
     this.post,
     this.recipe,
     this.ingredient,
+    this.episode,
+    this.episodeMs = 0,
     this.initialCollectionId,
     this.initialTitle = '',
   });
@@ -31,6 +33,8 @@ class EntryEditorScreen extends ConsumerStatefulWidget {
   final EntryPostRef? post;
   final EntryRecipeRef? recipe;
   final EntryIngredientRef? ingredient;
+  final EntryEpisodeRef? episode;
+  final int episodeMs;
   final String? initialCollectionId;
   final String initialTitle;
 
@@ -248,6 +252,12 @@ class _EntryEditorScreenState extends ConsumerState<EntryEditorScreen> {
         'recipeId': widget.existing?.recipe?.id ?? widget.recipe?.id,
         'ingredientId':
             widget.existing?.ingredient?.id ?? widget.ingredient?.id,
+        'episodeId': widget.existing?.episode?.id ?? widget.episode?.id,
+        'episodeMs': widget.existing?.episode != null
+            ? widget.existing!.episodeMs
+            : widget.episodeMs,
+        'courseRef': widget.existing?.courseRef ?? '',
+        'courseTitle': widget.existing?.courseTitle ?? '',
         'productId': widget.existing?.productId ?? '',
         'url': _url.text.trim(),
         'modifications': _modifications.text.trim(),
@@ -274,6 +284,7 @@ class _EntryEditorScreenState extends ConsumerState<EntryEditorScreen> {
             'post': e.post?.toJson(),
             'recipe': e.recipe?.toJson(),
             'ingredient': e.ingredient?.toJson(),
+            'episode': e.episode?.toJson(),
           }),
         );
       }
@@ -293,6 +304,10 @@ class _EntryEditorScreenState extends ConsumerState<EntryEditorScreen> {
     final post = widget.existing?.post ?? widget.post;
     final recipe = widget.existing?.recipe ?? widget.recipe;
     final ingredient = widget.existing?.ingredient ?? widget.ingredient;
+    final episode = widget.existing?.episode ?? widget.episode;
+    final episodeMs = widget.existing?.episode != null
+        ? widget.existing!.episodeMs
+        : widget.episodeMs;
     final titleLabel = switch (_kind) {
       'questions' => 'Para quién o para qué consulta',
       'checklist' => 'Nombre de la lista',
@@ -348,6 +363,14 @@ class _EntryEditorScreenState extends ConsumerState<EntryEditorScreen> {
               title: ingredient.name,
               subtitle: 'Ficha de ingrediente',
               imageUrl: '',
+            ),
+          if (episode != null)
+            _SourceCard(
+              icon: Icons.podcasts,
+              title: episode.title,
+              subtitle:
+                  '${episode.programTitle} · minuto ${(episodeMs ~/ 60000)}:${((episodeMs ~/ 1000) % 60).toString().padLeft(2, '0')}',
+              imageUrl: episode.coverUrl,
             ),
           if (_kind != 'post' && _kind != 'recipe')
             TextField(
@@ -470,6 +493,7 @@ class _EntryEditorScreenState extends ConsumerState<EntryEditorScreen> {
                 labelText: switch (_kind) {
                   'text' => 'Nota',
                   'post' => 'Mi contexto (por qué lo guardo, qué probar…)',
+                  'episode' => 'Qué quiero recordar de este momento',
                   'recipe' => 'Notas',
                   _ => 'Notas (opcional)',
                 },
