@@ -60,7 +60,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
       _loadSuggested();
     } else {
       await _save({'onboardingCompleted': true});
-      if (mounted) context.go(Routes.profile);
+      if (mounted) context.go(Routes.feed);
       return;
     }
     if (!mounted || _error != null) return;

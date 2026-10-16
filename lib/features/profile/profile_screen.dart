@@ -28,6 +28,11 @@ class ProfileScreen extends ConsumerWidget {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Mi perfil'),
+        leading: IconButton(
+          tooltip: 'Inicio',
+          icon: const Icon(Icons.home_outlined),
+          onPressed: () => context.go(Routes.feed),
+        ),
         actions: [
           IconButton(
             tooltip: 'Personas',
@@ -97,6 +102,13 @@ class ProfileScreen extends ConsumerWidget {
               const SizedBox(height: 16),
               _CountsRow(user: user),
               const SizedBox(height: 16),
+              ListTile(
+                leading: const Icon(Icons.grid_on_outlined),
+                title: const Text('Mis publicaciones'),
+                subtitle: const Text('Borradores, programadas y publicadas'),
+                trailing: const Icon(Icons.chevron_right),
+                onTap: () => context.push(Routes.myPosts),
+              ),
               if (user.isPrivate)
                 ListTile(
                   leading: const Icon(Icons.lock_outline),

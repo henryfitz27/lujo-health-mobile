@@ -2,7 +2,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../auth/auth_service.dart';
+import '../features/feed/feed_screen.dart';
 import '../features/login/login_screen.dart';
+import '../features/posts/create_post_screen.dart';
+import '../features/posts/my_posts_screen.dart';
+import '../features/posts/post_screen.dart';
 import '../features/onboarding/onboarding_screen.dart';
 import '../features/people/follow_requests_screen.dart';
 import '../features/people/people_screen.dart';
@@ -16,6 +20,10 @@ abstract final class Routes {
   static const splash = '/';
   static const login = '/login';
   static const onboarding = '/onboarding';
+  static const feed = '/feed';
+  static const createPost = '/posts/new';
+  static const myPosts = '/profile/posts';
+  static String post(String id) => '/posts/$id';
   static const profile = '/profile';
   static const editProfile = '/profile/edit';
   static const followRequests = '/profile/requests';
@@ -39,7 +47,7 @@ final routerProvider = Provider<GoRouter>((ref) {
       final onSplash = state.matchedLocation == Routes.splash;
 
       if (!loggedIn && !onLogin) return Routes.login;
-      if (loggedIn && (onLogin || onSplash)) return Routes.profile;
+      if (loggedIn && (onLogin || onSplash)) return Routes.feed;
       return null;
     },
     routes: [
@@ -49,10 +57,20 @@ final routerProvider = Provider<GoRouter>((ref) {
         path: Routes.onboarding,
         builder: (_, _) => const OnboardingScreen(),
       ),
+      GoRoute(path: Routes.feed, builder: (_, _) => const FeedScreen()),
+      GoRoute(
+        path: Routes.createPost,
+        builder: (_, _) => const CreatePostScreen(),
+      ),
+      GoRoute(
+        path: '/posts/:id',
+        builder: (_, state) => PostScreen(id: state.pathParameters['id']!),
+      ),
       GoRoute(
         path: Routes.profile,
         builder: (_, _) => const ProfileScreen(),
         routes: [
+          GoRoute(path: 'posts', builder: (_, _) => const MyPostsScreen()),
           GoRoute(path: 'edit', builder: (_, _) => const EditProfileScreen()),
           GoRoute(
             path: 'requests',

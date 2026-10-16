@@ -6,6 +6,7 @@ import '../config/env.dart';
 import 'models/account.dart';
 import 'models/catalog_item.dart';
 import 'models/me.dart';
+import 'models/post.dart';
 import 'models/profile.dart';
 
 class ApiException implements Exception {
@@ -160,6 +161,154 @@ class ApiClient {
         '/me/follow-requests/$userId/${accept ? 'accept' : 'reject'}',
       );
 
+  // --- Contenido ---
+
+  Future<UploadedMedia> uploadMedia(
+    String filePath, {
+    String? thumbnailPath,
+    int? durationMs,
+  }) async {
+    final form = FormData.fromMap({
+      'file': await MultipartFile.fromFile(filePath),
+      if (thumbnailPath != null)
+        'thumbnail': await MultipartFile.fromFile(thumbnailPath),
+      if (durationMs != null) 'durationMs': '$durationMs',
+    });
+    return UploadedMedia.fromJson(
+      await _request(
+        'POST',
+        '/media',
+        data: form,
+        options: Options(
+          sendTimeout: const Duration(minutes: 5),
+          receiveTimeout: const Duration(minutes: 5),
+        ),
+      ),
+    );
+  }
+
+  Future<Post> createPost(Map<String, dynamic> input) async =>
+      Post.fromJson(await _request('POST', '/posts', data: input));
+
+  Future<Post> updatePost(String id, Map<String, dynamic> input) async =>
+      Post.fromJson(await _request('PUT', '/posts/$id', data: input));
+
+  Future<Post> getPost(String id) async =>
+      Post.fromJson(await _get('/posts/$id'));
+
+  Future<void> deletePost(String id) => _request('DELETE', '/posts/$id');
+
+  Future<Post> publishPost(String id) async =>
+      Post.fromJson(await _request('POST', '/posts/$id/publish'));
+
+  Future<Post> archivePost(String id, {bool archive = true}) async =>
+      Post.fromJson(
+        await _request(
+          'POST',
+          '/posts/$id/${archive ? 'archive' : 'unarchive'}',
+        ),
+      );
+
+  Future<List<Post>> feed(
+    String kind, {
+    int limit = 10,
+    int offset = 0,
+  }) async => Post.listFromJson(
+    (await _get(
+      '/feed/$kind',
+      query: {'limit': limit, 'offset': offset},
+    ))['items'],
+  );
+
+  Future<List<Post>> myPosts({String status = '', int limit = 30}) async =>
+      Post.listFromJson(
+        (await _get(
+          '/me/posts',
+          query: {'status': status, 'limit': limit},
+        ))['items'],
+      );
+
+  Future<List<Post>> userPosts(String username, {int limit = 30}) async =>
+      Post.listFromJson(
+        (await _get(
+          '/users/$username/posts',
+          query: {'limit': limit},
+        ))['items'],
+      );
+
+  Future<List<Post>> savedPosts({int limit = 30}) async => Post.listFromJson(
+    (await _get('/me/saved', query: {'limit': limit}))['items'],
+  );
+
+  Future<(PostCounts, PostViewer)> react(
+    String postId, {
+    String kind = 'like',
+  }) => _interaction('POST', '/posts/$postId/reaction', data: {'kind': kind});
+
+  Future<(PostCounts, PostViewer)> unreact(String postId) =>
+      _interaction('DELETE', '/posts/$postId/reaction');
+
+  Future<(PostCounts, PostViewer)> savePost(
+    String postId, {
+    bool save = true,
+  }) => _interaction(save ? 'POST' : 'DELETE', '/posts/$postId/save');
+
+  Future<(PostCounts, PostViewer)> signal(String postId, String signal) =>
+      _interaction('POST', '/posts/$postId/signal', data: {'signal': signal});
+
+  Future<(PostCounts, PostViewer)> _interaction(
+    String method,
+    String path, {
+    Object? data,
+  }) async {
+    final body = await _request(method, path, data: data);
+    return (
+      PostCounts.fromJson(body['counts'] as Map<String, dynamic>?),
+      PostViewer.fromJson(body['viewer'] as Map<String, dynamic>?),
+    );
+  }
+
+  Future<void> recordView(String postId, {int watchedMs = 0}) =>
+      _request('POST', '/posts/$postId/view', data: {'watchedMs': watchedMs});
+
+  Future<List<Comment>> comments(String postId, {String? parentId}) async =>
+      Comment.listFromJson(
+        (await _get(
+          '/posts/$postId/comments',
+          query: {'limit': 50, 'parentId': ?parentId},
+        ))['items'],
+      );
+
+  Future<Comment> addComment(
+    String postId,
+    String body, {
+    String? parentId,
+  }) async => Comment.fromJson(
+    await _request(
+      'POST',
+      '/posts/$postId/comments',
+      data: {'body': body, 'parentId': parentId},
+    ),
+  );
+
+  Future<void> removeComment(String id) => _request('DELETE', '/comments/$id');
+
+  Future<void> report({
+    required String targetType,
+    required String targetId,
+    required String reason,
+    String details = '',
+  }) => _request(
+    'POST',
+    '/reports',
+    data: {
+      'targetType': targetType,
+      'targetId': targetId,
+      'reason': reason,
+      'details': details,
+    },
+  );
+
   // --- Transporte ---
 
   Future<Map<String, dynamic>> _get(
@@ -172,13 +321,14 @@ class ApiClient {
     String path, {
     Map<String, dynamic>? query,
     Object? data,
+    Options? options,
   }) async {
     try {
       final response = await _dio.request<dynamic>(
         path,
         data: data,
         queryParameters: query,
-        options: Options(method: method),
+        options: (options ?? Options()).copyWith(method: method),
       );
       final body = response.data;
       return body is Map<String, dynamic> ? body : const {};
