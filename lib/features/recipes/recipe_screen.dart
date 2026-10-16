@@ -10,6 +10,7 @@ import '../../app/router.dart';
 import '../../config/env.dart';
 import '../../widgets/profile_tile.dart';
 import '../feed/post_actions.dart';
+import '../notebook/save_to_notebook_sheet.dart';
 import 'create_recipe_screen.dart';
 import 'recipe_widgets.dart';
 
@@ -211,6 +212,18 @@ class _RecipeScreenState extends ConsumerState<RecipeScreen> {
               PopupMenuButton<String>(
                 onSelected: (v) async {
                   switch (v) {
+                    case 'notebook':
+                      final saved = await showSaveToNotebookSheet(
+                        context,
+                        recipe: r,
+                      );
+                      if (saved != null && context.mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text('Guardada en tu cuaderno.'),
+                          ),
+                        );
+                      }
                     case 'variant':
                       await _createVariant();
                     case 'report':
@@ -232,6 +245,10 @@ class _RecipeScreenState extends ConsumerState<RecipeScreen> {
                 itemBuilder: (_) => [
                   if (isOwner)
                     const PopupMenuItem(value: 'edit', child: Text('Editar')),
+                  const PopupMenuItem(
+                    value: 'notebook',
+                    child: Text('Guardar en mi cuaderno'),
+                  ),
                   const PopupMenuItem(
                     value: 'variant',
                     child: Text('Crear mi variante'),

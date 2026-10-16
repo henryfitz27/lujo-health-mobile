@@ -8,6 +8,7 @@ import 'package:package_info_plus/package_info_plus.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../api/api_client.dart';
+import 'push_registration.dart';
 
 const _installationKey = 'installation_id';
 
@@ -42,15 +43,24 @@ Future<String> deviceName() async {
   return Platform.operatingSystem;
 }
 
-/// Registra o actualiza el dispositivo actual en la API. El token push se añadirá en la etapa de
-/// notificaciones; por ahora solo se envía cuando se conoce.
+/// Registra o actualiza el dispositivo actual en la API con el token push de FCM cuando la
+/// compilación trae credenciales de Firebase; si no, el dispositivo queda sin token.
 final deviceRegistrationProvider = FutureProvider<void>((ref) async {
   final api = ref.watch(apiClientProvider);
   final pkg = await PackageInfo.fromPlatform();
-  await api.registerDevice(
-    installationId: await installationId(),
-    platform: currentPlatform(),
-    deviceName: await deviceName(),
-    appVersion: '${pkg.version}+${pkg.buildNumber}',
-  );
+  await PushRegistration.init();
+  final token = await PushRegistration.token();
+  Future<void> register(String? pushToken) async {
+    await api.registerDevice(
+      installationId: await installationId(),
+      platform: currentPlatform(),
+      deviceName: await deviceName(),
+      appVersion: '${pkg.version}+${pkg.buildNumber}',
+      pushToken: pushToken,
+    );
+  }
+
+  await register(token);
+  final sub = PushRegistration.onTokenRefresh.listen(register);
+  ref.onDispose(sub.cancel);
 });

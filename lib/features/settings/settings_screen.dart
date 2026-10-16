@@ -1,4 +1,9 @@
 import 'package:flutter/material.dart';
+
+import 'accessibility_section.dart';
+import 'data_section.dart';
+import 'privacy_section.dart';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../api/api_client.dart';
@@ -30,6 +35,12 @@ class SettingsScreen extends ConsumerWidget {
         padding: const EdgeInsets.only(bottom: 32),
         children: const [
           _NotificationsSection(),
+          Divider(),
+          PrivacySection(),
+          Divider(),
+          AccessibilitySection(),
+          Divider(),
+          DataSection(),
           Divider(),
           _SessionsSection(),
           Divider(),

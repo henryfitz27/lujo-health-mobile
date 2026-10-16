@@ -6,6 +6,8 @@ import '../../api/api_client.dart';
 import '../../api/models/post.dart';
 import '../../api/models/recipe.dart';
 import '../../app/router.dart';
+import '../../app/app_settings.dart';
+import '../notifications/notifications_screen.dart';
 import '../recipes/recipe_widgets.dart';
 import 'post_view.dart';
 
@@ -101,6 +103,30 @@ class _FeedScreenState extends ConsumerState<FeedScreen>
             tooltip: 'Crear publicación',
             icon: const Icon(Icons.add_box_outlined),
             onPressed: _create,
+          ),
+          IconButton(
+            tooltip: 'Mi cuaderno',
+            icon: const Icon(Icons.book_outlined),
+            onPressed: () => context.push(Routes.notebook),
+          ),
+          Consumer(
+            builder: (context, ref, _) {
+              final unread = ref.watch(unreadNotificationsProvider).value ?? 0;
+              return IconButton(
+                tooltip: unread > 0
+                    ? 'Notificaciones ($unread sin leer)'
+                    : 'Notificaciones',
+                icon: Badge(
+                  isLabelVisible: unread > 0,
+                  label: Text('$unread'),
+                  child: const Icon(Icons.notifications_none),
+                ),
+                onPressed: () async {
+                  await context.push(Routes.notifications);
+                  ref.read(unreadNotificationsProvider.notifier).refresh();
+                },
+              );
+            },
           ),
           IconButton(
             tooltip: 'Mi perfil',
@@ -217,7 +243,8 @@ class _FeedPagerState extends ConsumerState<_FeedPager>
         onRetry: _refresh,
       );
     }
-    final autoplay = ref.watch(autoplayProvider);
+    final autoplay =
+        ref.watch(autoplayProvider) && ref.watch(appSettingsProvider).autoplay;
     return RefreshIndicator(
       onRefresh: _refresh,
       child: PageView.builder(

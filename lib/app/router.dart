@@ -11,6 +11,13 @@ import '../features/recipes/my_recipes_screen.dart';
 import '../features/recipes/recipe_screen.dart';
 import '../features/recipes/shopping_list_screen.dart';
 import '../features/login/login_screen.dart';
+import '../features/notebook/collection_screen.dart';
+import '../features/notebook/entry_screen.dart';
+import '../features/notebook/notebook_screen.dart';
+import '../features/notebook/shared_screen.dart';
+import '../features/notifications/notifications_screen.dart';
+import '../features/settings/legal_screen.dart';
+import '../features/settings/privacy_section.dart';
 import '../features/posts/create_post_screen.dart';
 import '../features/posts/my_posts_screen.dart';
 import '../features/posts/post_screen.dart';
@@ -44,6 +51,13 @@ abstract final class Routes {
   static const settings = '/profile/settings';
   static const people = '/people';
   static String user(String username) => '/users/$username';
+  static const notebook = '/notebook';
+  static const notebookShared = '/notebook/shared';
+  static String notebookEntry(String id) => '/notebook/entries/$id';
+  static String notebookCollection(String id) => '/notebook/collections/$id';
+  static const notifications = '/notifications';
+  static const sharedAccess = '/profile/settings/shared-access';
+  static const legal = '/profile/settings/legal';
 }
 
 final routerProvider = Provider<GoRouter>((ref) {
@@ -72,6 +86,34 @@ final routerProvider = Provider<GoRouter>((ref) {
         builder: (_, _) => const OnboardingScreen(),
       ),
       GoRoute(path: Routes.feed, builder: (_, _) => const FeedScreen()),
+      GoRoute(
+        path: Routes.notebook,
+        builder: (_, _) => const NotebookScreen(),
+        routes: [
+          GoRoute(
+            path: 'shared',
+            builder: (_, _) => const SharedWithMeScreen(),
+          ),
+          GoRoute(
+            path: 'entries/:id',
+            builder: (_, state) => EntryScreen(id: state.pathParameters['id']!),
+          ),
+          GoRoute(
+            path: 'collections/:id',
+            builder: (_, state) =>
+                CollectionScreen(id: state.pathParameters['id']!),
+          ),
+        ],
+      ),
+      GoRoute(
+        path: Routes.notifications,
+        builder: (_, _) => const NotificationsScreen(),
+      ),
+      GoRoute(
+        path: Routes.sharedAccess,
+        builder: (_, _) => const SharedAccessScreen(),
+      ),
+      GoRoute(path: Routes.legal, builder: (_, _) => const LegalScreen()),
       GoRoute(path: Routes.explore, builder: (_, _) => const ExploreScreen()),
       GoRoute(
         path: Routes.createRecipe,

@@ -103,6 +103,13 @@ class ProfileScreen extends ConsumerWidget {
               _CountsRow(user: user),
               const SizedBox(height: 16),
               ListTile(
+                leading: const Icon(Icons.book_outlined),
+                title: const Text('Mi cuaderno'),
+                subtitle: const Text('Notas, guardados, colecciones y listas'),
+                trailing: const Icon(Icons.chevron_right),
+                onTap: () => context.push(Routes.notebook),
+              ),
+              ListTile(
                 leading: const Icon(Icons.grid_on_outlined),
                 title: const Text('Mis publicaciones'),
                 subtitle: const Text('Borradores, programadas y publicadas'),

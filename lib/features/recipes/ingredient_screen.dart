@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../../api/api_client.dart';
+import '../notebook/save_to_notebook_sheet.dart';
 import '../../api/models/post.dart';
 import '../../api/models/recipe.dart';
 import '../../app/router.dart';
@@ -56,7 +57,25 @@ class _IngredientScreenState extends ConsumerState<IngredientScreen> {
     }
     final theme = Theme.of(context);
     return Scaffold(
-      appBar: AppBar(title: Text(ing.name)),
+      appBar: AppBar(
+        title: Text(ing.name),
+        actions: [
+          IconButton(
+            tooltip: 'Guardar en mi cuaderno',
+            icon: const Icon(Icons.bookmark_add_outlined),
+            onPressed: () => showSaveToNotebookSheet(context, ingredient: ing),
+          ),
+          IconButton(
+            tooltip: 'Pregunta para mi profesional',
+            icon: const Icon(Icons.help_outline),
+            onPressed: () => showSaveToNotebookSheet(
+              context,
+              ingredient: ing,
+              kind: 'questions',
+            ),
+          ),
+        ],
+      ),
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [

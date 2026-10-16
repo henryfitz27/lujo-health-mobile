@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import 'app/app_settings.dart';
 import 'app/router.dart';
 import 'auth/auth_service.dart';
 
@@ -24,18 +25,20 @@ class _LujoHealthAppState extends ConsumerState<LujoHealthApp> {
 
   @override
   Widget build(BuildContext context) {
+    final settings = ref.watch(appSettingsProvider);
     return MaterialApp.router(
       title: 'Lujo Health',
-      theme: ThemeData(
-        colorSchemeSeed: const Color(0xFF2E7D5B),
-        useMaterial3: true,
-      ),
-      darkTheme: ThemeData(
-        colorSchemeSeed: const Color(0xFF2E7D5B),
-        brightness: Brightness.dark,
-        useMaterial3: true,
-      ),
+      theme: buildTheme(Brightness.light, settings),
+      darkTheme: buildTheme(Brightness.dark, settings),
+      themeMode: settings.themeMode,
       routerConfig: ref.watch(routerProvider),
+      builder: (context, child) => MediaQuery(
+        data: MediaQuery.of(context).copyWith(
+          textScaler: TextScaler.linear(settings.textScale),
+          disableAnimations: settings.reduceMotion,
+        ),
+        child: child ?? const SizedBox.shrink(),
+      ),
     );
   }
 }

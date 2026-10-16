@@ -99,6 +99,13 @@ class ProfileSummary {
   final String name;
   final String avatarUrl;
 
+  Map<String, dynamic> toJson() => {
+    'id': id,
+    'username': username,
+    'name': name,
+    'avatarUrl': avatarUrl,
+  };
+
   factory ProfileSummary.fromJson(Map<String, dynamic> json) => ProfileSummary(
     id: json['id'] as String,
     username: json['username'] as String?,

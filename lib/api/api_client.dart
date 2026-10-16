@@ -6,6 +6,7 @@ import '../config/env.dart';
 import 'models/account.dart';
 import 'models/catalog_item.dart';
 import 'models/me.dart';
+import 'models/notebook.dart';
 import 'models/post.dart';
 import 'models/profile.dart';
 import 'models/recipe.dart';
@@ -448,6 +449,208 @@ class ApiClient {
       (await _request('DELETE', '/me/shopping-list/checked'))['removed']
           as int? ??
       0;
+
+  // --- Cuaderno personal ---
+
+  Future<NotebookSummary> notebookSummary() async =>
+      NotebookSummary.fromJson(await _get('/me/notebook'));
+
+  Future<List<NotebookEntry>> notebookEntries({
+    String kind = '',
+    String collection = '',
+    String tag = '',
+    bool favorite = false,
+    String q = '',
+    DateTime? updatedSince,
+    int limit = 200,
+  }) async => NotebookEntry.listFromJson(
+    (await _get(
+      '/me/notebook/entries',
+      query: {
+        if (kind.isNotEmpty) 'kind': kind,
+        if (collection.isNotEmpty) 'collection': collection,
+        if (tag.isNotEmpty) 'tag': tag,
+        if (favorite) 'favorite': 'true',
+        if (q.isNotEmpty) 'q': q,
+        if (updatedSince != null)
+          'updated_since': updatedSince.toUtc().toIso8601String(),
+        'limit': limit,
+      },
+    ))['items'],
+  );
+
+  Future<NotebookEntry> notebookEntry(String id) async =>
+      NotebookEntry.fromJson(await _get('/me/notebook/entries/$id'));
+
+  Future<NotebookEntry> createNotebookEntry(Map<String, dynamic> input) async =>
+      NotebookEntry.fromJson(
+        await _request('POST', '/me/notebook/entries', data: input),
+      );
+
+  /// Lanza [ApiException] con código `conflict` si el servidor tiene una versión más nueva.
+  Future<NotebookEntry> updateNotebookEntry(
+    String id,
+    Map<String, dynamic> input,
+  ) async => NotebookEntry.fromJson(
+    await _request('PUT', '/me/notebook/entries/$id', data: input),
+  );
+
+  Future<void> deleteNotebookEntry(String id) =>
+      _request('DELETE', '/me/notebook/entries/$id');
+
+  Future<NotebookEntry> favoriteNotebookEntry(
+    String id, {
+    required bool favorite,
+  }) async => NotebookEntry.fromJson(
+    await _request(
+      favorite ? 'POST' : 'DELETE',
+      '/me/notebook/entries/$id/favorite',
+    ),
+  );
+
+  Future<List<NotebookEntry>> searchNotebook(String q) async =>
+      NotebookEntry.listFromJson(
+        (await _get('/me/notebook/search', query: {'q': q}))['items'],
+      );
+
+  Future<List<String>> notebookTags() async => [
+    for (final t in (await _get('/me/notebook/tags'))['items'] as List? ?? [])
+      t as String,
+  ];
+
+  Future<List<NotebookCollection>> notebookCollections({
+    DateTime? updatedSince,
+  }) async => NotebookCollection.listFromJson(
+    (await _get(
+      '/me/notebook/collections',
+      query: {
+        if (updatedSince != null)
+          'updated_since': updatedSince.toUtc().toIso8601String(),
+      },
+    ))['items'],
+  );
+
+  Future<NotebookCollection> createCollection(
+    Map<String, dynamic> input,
+  ) async => NotebookCollection.fromJson(
+    await _request('POST', '/me/notebook/collections', data: input),
+  );
+
+  Future<NotebookCollection> updateCollection(
+    String id,
+    Map<String, dynamic> input,
+  ) async => NotebookCollection.fromJson(
+    await _request('PUT', '/me/notebook/collections/$id', data: input),
+  );
+
+  Future<void> deleteCollection(String id) =>
+      _request('DELETE', '/me/notebook/collections/$id');
+
+  Future<(NotebookCollection, List<NotebookEntry>)> collectionEntries(
+    String id,
+  ) async {
+    final json = await _get('/me/notebook/collections/$id');
+    return (
+      NotebookCollection.fromJson(json['collection'] as Map<String, dynamic>),
+      NotebookEntry.listFromJson(json['entries']),
+    );
+  }
+
+  Future<void> addToCollection(String collectionId, String entryId) => _request(
+    'POST',
+    '/me/notebook/collections/$collectionId/entries',
+    data: {'entryId': entryId},
+  );
+
+  Future<void> removeFromCollection(String collectionId, String entryId) =>
+      _request(
+        'DELETE',
+        '/me/notebook/collections/$collectionId/entries/$entryId',
+      );
+
+  String _shareBase(String target, String id) =>
+      '/me/notebook/${target == 'entry' ? 'entries' : 'collections'}/$id/shares';
+
+  Future<List<NotebookShare>> listShares(String target, String id) async =>
+      NotebookShare.listFromJson((await _get(_shareBase(target, id)))['items']);
+
+  Future<List<NotebookShare>> share(
+    String target,
+    String id, {
+    required String username,
+    required String access,
+  }) async => NotebookShare.listFromJson(
+    (await _request(
+      'POST',
+      _shareBase(target, id),
+      data: {'username': username, 'access': access},
+    ))['items'],
+  );
+
+  Future<List<NotebookShare>> unshare(
+    String target,
+    String id,
+    String userId,
+  ) async => NotebookShare.listFromJson(
+    (await _request('DELETE', '${_shareBase(target, id)}/$userId'))['items'],
+  );
+
+  Future<(List<NotebookEntry>, List<NotebookCollection>)> sharedWithMe() async {
+    final json = await _get('/me/notebook/shared');
+    return (
+      NotebookEntry.listFromJson(json['entries']),
+      NotebookCollection.listFromJson(json['collections']),
+    );
+  }
+
+  Future<List<OutgoingShare>> outgoingShares() async =>
+      OutgoingShare.listFromJson((await _get('/me/notebook/shares'))['items']);
+
+  Future<void> revokeShare(int id) =>
+      _request('DELETE', '/me/notebook/shares/$id');
+
+  Future<List<NotebookCollection>> publicCollections(String username) async =>
+      NotebookCollection.listFromJson(
+        (await _get('/users/$username/collections'))['items'],
+      );
+
+  // --- Notificaciones, privacidad y datos ---
+
+  Future<(List<AppNotification>, int)> notifications({int offset = 0}) async {
+    final json = await _get(
+      '/me/notifications',
+      query: {'limit': 30, 'offset': offset},
+    );
+    return (
+      AppNotification.listFromJson(json['items']),
+      json['unread'] as int? ?? 0,
+    );
+  }
+
+  Future<int> unreadNotifications() async =>
+      (await _get('/me/notifications/unread'))['unread'] as int? ?? 0;
+
+  Future<void> markNotificationsRead({List<String> ids = const []}) => _request(
+    'POST',
+    '/me/notifications/read',
+    data: ids.isEmpty ? null : {'ids': ids},
+  );
+
+  Future<PrivacySettings> getPrivacy() async =>
+      PrivacySettings.fromJson(await _get('/me/privacy'));
+
+  Future<PrivacySettings> updatePrivacy(PrivacySettings p) async =>
+      PrivacySettings.fromJson(
+        await _request('PUT', '/me/privacy', data: p.toJson()),
+      );
+
+  Future<List<DataRequest>> dataRequests() async =>
+      DataRequest.listFromJson((await _get('/me/data-requests'))['items']);
+
+  Future<DataRequest> createDataRequest(String kind) async =>
+      DataRequest.fromJson(
+        await _request('POST', '/me/data-requests', data: {'kind': kind}),
+      );
 
   // --- Transporte ---
 

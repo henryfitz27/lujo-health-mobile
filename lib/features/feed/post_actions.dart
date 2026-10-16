@@ -8,6 +8,7 @@ import '../../api/models/post.dart';
 import '../../app/router.dart';
 import '../../config/env.dart';
 import '../posts/create_post_screen.dart';
+import '../notebook/save_to_notebook_sheet.dart';
 import 'comments_sheet.dart';
 
 /// Reacción, comentarios, guardar, compartir y menú (me interesa, ver menos, ocultar,
@@ -134,6 +135,12 @@ class _PostActionsState extends ConsumerState<PostActions> {
               onTap: () => Navigator.pop(context, 'hide'),
             ),
             ListTile(
+              leading: const Icon(Icons.book_outlined),
+              title: const Text('Guardar en mi cuaderno'),
+              subtitle: const Text('Con tu contexto y en una colección'),
+              onTap: () => Navigator.pop(context, 'notebook'),
+            ),
+            ListTile(
               leading: const Icon(Icons.flag_outlined),
               title: const Text('Denunciar'),
               onTap: () => Navigator.pop(context, 'report'),
@@ -150,6 +157,13 @@ class _PostActionsState extends ConsumerState<PostActions> {
     );
     if (!mounted || action == null) return;
     switch (action) {
+      case 'notebook':
+        final saved = await showSaveToNotebookSheet(context, post: post);
+        if (saved != null && mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Guardado en tu cuaderno.')),
+          );
+        }
       case 'edit':
         final updated = await Navigator.of(context).push<Post>(
           MaterialPageRoute(builder: (_) => CreatePostScreen(existing: post)),

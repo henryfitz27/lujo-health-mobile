@@ -26,5 +26,13 @@ class Env {
     defaultValue: 'http://10.0.2.2:8080',
   );
 
+  /// Firebase (push). Opcionales: sin ellos no se registra token FCM.
+  static const firebaseApiKey = String.fromEnvironment('FIREBASE_API_KEY');
+  static const firebaseAppId = String.fromEnvironment('FIREBASE_APP_ID');
+  static const firebaseSenderId = String.fromEnvironment('FIREBASE_SENDER_ID');
+  static const firebaseProjectId = String.fromEnvironment(
+    'FIREBASE_PROJECT_ID',
+  );
+
   static bool get isConfigured => logtoAppId.isNotEmpty;
 }
