@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../api/api_client.dart';
 import '../../api/models/profile.dart';
 import '../../widgets/profile_tile.dart';
+import 'contact_section.dart';
 
 final publicProfileProvider = FutureProvider.autoDispose
     .family<PublicProfile, String>(
@@ -116,6 +117,14 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
               children: [
                 if (profile.professional != null)
                   _ProfessionalCard(profile: profile),
+                if (profile.contact != null)
+                  ContactSection(
+                    username: widget.username,
+                    name: profile.name,
+                    contact: profile.contact!,
+                    partner: profile.partner,
+                    isSelf: ref.read(meProvider).value?.id == profile.id,
+                  ),
                 Expanded(
                   child: _ProfileBody(
                     profile: profile,
@@ -182,6 +191,14 @@ class _ProfileBody extends StatelessWidget {
         ),
         const SizedBox(height: 12),
         Center(child: Text(profile.name, style: theme.textTheme.titleLarge)),
+        if (profile.partner && profile.contact == null)
+          Center(
+            child: Chip(
+              avatar: const Icon(Icons.handshake_outlined, size: 16),
+              label: const Text('Socio'),
+              visualDensity: VisualDensity.compact,
+            ),
+          ),
         if (rel.followedBy)
           Center(child: Text('Te sigue', style: theme.textTheme.bodySmall)),
         const SizedBox(height: 12),

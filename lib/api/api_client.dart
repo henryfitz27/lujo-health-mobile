@@ -6,6 +6,7 @@ import '../config/env.dart';
 import 'models/account.dart';
 import 'models/catalog_item.dart';
 import 'models/community.dart';
+import 'models/contact.dart';
 import 'models/creator.dart';
 import 'models/me.dart';
 import 'models/media.dart';
@@ -932,6 +933,27 @@ class ApiClient {
       '/me/verification',
       data: {'documentUrl': documentUrl, 'note': note},
     ),
+  );
+
+  // --- Contacto y tarjeta digital (etapa 9) ---
+
+  Future<ContactState> myContact() async =>
+      ContactState.fromJson(await _get('/me/contact'));
+
+  Future<ContactState> updateContact(ContactCard card) async =>
+      ContactState.fromJson(
+        await _request('PUT', '/me/contact', data: card.toJson()),
+      );
+
+  /// Cuenta una vista, un guardado o un toque en un enlace del perfil ajeno.
+  Future<void> contactEvent(
+    String username,
+    String kind, {
+    String linkId = '',
+  }) => _request(
+    'POST',
+    '/users/$username/contact/events',
+    data: {'kind': kind, if (linkId.isNotEmpty) 'linkId': linkId},
   );
 
   // --- Transporte ---

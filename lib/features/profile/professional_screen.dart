@@ -3,6 +3,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../api/api_client.dart';
 import '../../api/models/creator.dart';
+import '../../app/router.dart';
+
+import 'package:go_router/go_router.dart';
 
 /// Tipo de cuenta y ficha profesional (v2 §5.2, §5.3): especialidad, credencial, país,
 /// contacto y solicitud de verificación.
@@ -294,27 +297,15 @@ class _ProfessionalScreenState extends ConsumerState<ProfessionalScreen> {
                       textCapitalization: TextCapitalization.characters,
                     ),
                     const SizedBox(height: 8),
-                    Text(
-                      'Contacto profesional',
-                      style: theme.textTheme.titleMedium,
-                    ),
-                    TextFormField(
-                      controller: _contactEmail,
-                      decoration: const InputDecoration(labelText: 'Correo'),
-                      keyboardType: TextInputType.emailAddress,
-                    ),
-                    TextFormField(
-                      controller: _contactUrl,
-                      decoration: const InputDecoration(
-                        labelText: 'Enlace (agenda, consultorio, web)',
-                      ),
-                      keyboardType: TextInputType.url,
-                    ),
-                    SwitchListTile(
+                    ListTile(
                       contentPadding: EdgeInsets.zero,
-                      title: const Text('Mostrar contacto en mi perfil'),
-                      value: _contactPublic,
-                      onChanged: (v) => setState(() => _contactPublic = v),
+                      leading: const Icon(Icons.connect_without_contact),
+                      title: const Text('Contacto profesional'),
+                      subtitle: const Text(
+                        'Correo, agenda y redes se configuran en «Contacto y redes».',
+                      ),
+                      trailing: const Icon(Icons.chevron_right),
+                      onTap: () => context.push(Routes.contact),
                     ),
                     Text(
                       'La revisión de cada publicación tiene su propio estado: estar verificado no la sustituye.',

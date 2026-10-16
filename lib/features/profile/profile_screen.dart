@@ -154,6 +154,15 @@ class ProfileScreen extends ConsumerWidget {
                 onTap: () => context.push(Routes.creator),
               ),
               ListTile(
+                leading: const Icon(Icons.connect_without_contact),
+                title: const Text('Contacto y redes'),
+                subtitle: const Text(
+                  'WhatsApp, redes y tarjeta digital con QR',
+                ),
+                trailing: const Icon(Icons.chevron_right),
+                onTap: () => context.push(Routes.contact),
+              ),
+              ListTile(
                 leading: const Icon(Icons.verified_outlined),
                 title: const Text('Cuenta y perfil profesional'),
                 subtitle: const Text(

@@ -1,4 +1,5 @@
 import 'catalog_item.dart';
+import 'contact.dart';
 
 /// Relación del usuario autenticado con otro perfil.
 class Relation {
@@ -72,6 +73,8 @@ class PublicProfile {
     required this.relation,
     this.accountKind = 'user',
     this.professional,
+    this.contact,
+    this.partner = false,
   });
 
   final String id;
@@ -86,6 +89,10 @@ class PublicProfile {
   final Relation relation;
   final String accountKind;
   final ProfessionalPublic? professional;
+
+  /// Tarjeta de contacto si la persona la abrió (etapa 9) e insignia de socio.
+  final ContactPublic? contact;
+  final bool partner;
 
   bool get isPrivate => visibility == 'private';
   bool get isVerifiedProfessional => professional?.verified ?? false;
@@ -103,6 +110,8 @@ class PublicProfile {
     relation: relation,
     accountKind: accountKind,
     professional: professional,
+    contact: contact,
+    partner: partner,
   );
 
   factory PublicProfile.fromJson(Map<String, dynamic> json) {
@@ -126,6 +135,10 @@ class PublicProfile {
               json['professional'] as Map<String, dynamic>,
             )
           : null,
+      contact: json['contact'] is Map<String, dynamic>
+          ? ContactPublic.fromJson(json['contact'] as Map<String, dynamic>)
+          : null,
+      partner: json['partner'] as bool? ?? false,
     );
   }
 }

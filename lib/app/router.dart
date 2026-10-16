@@ -40,6 +40,7 @@ import '../features/posts/create_post_screen.dart';
 import '../features/posts/my_posts_screen.dart';
 import '../features/posts/post_screen.dart';
 import '../features/profile/edit_profile_screen.dart';
+import '../features/profile/contact_screen.dart';
 import '../features/profile/professional_screen.dart';
 import '../features/profile/profile_screen.dart';
 import '../features/recipes/cook_mode_screen.dart';
@@ -74,6 +75,7 @@ abstract final class Routes {
   static String editCommunity(String slug) => '/communities/$slug/edit';
   static const creator = '/profile/creator';
   static const professional = '/profile/professional';
+  static const contact = '/profile/contact';
   static String series(String id) => '/series/$id';
   static const myPosts = '/profile/posts';
   static String post(String id) => '/posts/$id';
@@ -367,6 +369,7 @@ final routerProvider = Provider<GoRouter>((ref) {
             path: 'professional',
             builder: (_, _) => const ProfessionalScreen(),
           ),
+          GoRoute(path: 'contact', builder: (_, _) => const ContactScreen()),
           GoRoute(
             path: 'requests',
             builder: (_, _) => const FollowRequestsScreen(),
