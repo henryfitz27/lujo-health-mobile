@@ -97,12 +97,20 @@ class _LearningScreenState extends ConsumerState<LearningScreen> {
     final lms = ref.watch(lmsClientProvider);
     if (!lms.isConfigured) {
       return Scaffold(
-        appBar: ModuleAppBar(title: name),
+        appBar: ModuleAppBar(
+          title: name,
+          logo: name == 'Trasciende'
+              ? 'assets/brand/trasciende_white.png'
+              : null,
+        ),
         body: const LmsNotConfigured(),
       );
     }
     return Scaffold(
-      appBar: ModuleAppBar(title: name),
+      appBar: ModuleAppBar(
+        title: name,
+        logo: name == 'Trasciende' ? 'assets/brand/trasciende_white.png' : null,
+      ),
       body: RefreshIndicator(
         onRefresh: _reload,
         child: FutureBuilder<_Home>(

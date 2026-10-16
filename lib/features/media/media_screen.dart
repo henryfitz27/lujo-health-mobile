@@ -10,7 +10,7 @@ import '../../app/shell.dart';
 import 'media_widgets.dart';
 import 'player_service.dart';
 
-/// Portada de Health TV: continuar, estrenos, programas seguidos, cola y programas.
+/// Portada de Vive TV: continuar, estrenos, programas seguidos, cola y programas.
 class MediaScreen extends ConsumerStatefulWidget {
   const MediaScreen({super.key});
 
@@ -58,7 +58,7 @@ class _MediaScreenState extends ConsumerState<MediaScreen> {
   @override
   Widget build(BuildContext context) {
     final org = ref.watch(organizationProvider).value?.organization;
-    final name = org?.moduleName('media', 'Health TV') ?? 'Health TV';
+    final name = org?.moduleName('media', 'Vive TV') ?? 'Vive TV';
     final handler = ref.watch(playerProvider);
     return Scaffold(
       appBar: ModuleAppBar(title: name),

@@ -34,7 +34,7 @@ class _LujoHealthAppState extends ConsumerState<LujoHealthApp> {
         : null;
     final seed = brandColor(org);
     return MaterialApp.router(
-      title: org?.name ?? 'Lujo Health',
+      title: org?.name ?? 'Vive',
       theme: buildTheme(Brightness.light, settings, seed: seed),
       darkTheme: buildTheme(Brightness.dark, settings, seed: seed),
       themeMode: settings.themeMode,

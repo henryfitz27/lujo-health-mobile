@@ -40,7 +40,7 @@ class AppShell extends ConsumerWidget {
         data: onCommunity && !dark
             ? NavigationBarThemeData(
                 backgroundColor: Colors.black,
-                indicatorColor: Colors.white24,
+                indicatorColor: viveBlue,
                 iconTheme: WidgetStateProperty.all(
                   const IconThemeData(color: Colors.white),
                 ),
@@ -88,9 +88,13 @@ class ModuleAppBar extends StatelessWidget implements PreferredSizeWidget {
     required this.title,
     this.actions = const [],
     this.bottom,
+    this.logo,
   });
 
   final String title;
+
+  /// Logotipo monocromo (PNG blanco) que sustituye al título; se tiñe con el color del texto.
+  final String? logo;
   final List<Widget> actions;
   final PreferredSizeWidget? bottom;
 
@@ -101,7 +105,14 @@ class ModuleAppBar extends StatelessWidget implements PreferredSizeWidget {
   @override
   Widget build(BuildContext context) {
     return AppBar(
-      title: Text(title),
+      title: logo == null
+          ? Text(title)
+          : Image.asset(
+              logo!,
+              height: 22,
+              color: Theme.of(context).colorScheme.onSurface,
+              semanticLabel: title,
+            ),
       actions: [
         ...actions,
         IconButton(

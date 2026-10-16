@@ -76,19 +76,24 @@ final appSettingsProvider = NotifierProvider<AppSettingsNotifier, AppSettings>(
 ThemeData buildTheme(
   Brightness brightness,
   AppSettings s, {
-  Color seed = const Color(0xFF2E7D5B),
+  Color seed = const Color(0xFF034CFF),
 }) {
   final scheme = s.highContrast
       ? (brightness == Brightness.dark
             ? const ColorScheme.highContrastDark(
-                primary: Color(0xFF8CE0B8),
+                primary: Color(0xFF9DB8FF),
                 secondary: Color(0xFFFFE082),
               )
             : const ColorScheme.highContrastLight(
-                primary: Color(0xFF0E4F35),
+                primary: Color(0xFF0033B3),
                 secondary: Color(0xFF5D3A00),
               ))
-      : ColorScheme.fromSeed(seedColor: seed, brightness: brightness);
+      : ColorScheme.fromSeed(
+          seedColor: seed,
+          brightness: brightness,
+          // Fidelidad al color institucional: el azul no se apaga hacia lila.
+          dynamicSchemeVariant: DynamicSchemeVariant.fidelity,
+        ).copyWith(primary: brightness == Brightness.light ? seed : null);
   return ThemeData(
     colorScheme: scheme,
     useMaterial3: true,

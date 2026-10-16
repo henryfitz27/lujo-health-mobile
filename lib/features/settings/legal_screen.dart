@@ -8,7 +8,7 @@ class LegalScreen extends StatelessWidget {
   static const _sections = [
     (
       'Términos de uso',
-      'Lujo Health es una red social de salud y bienestar. Al usarla aceptas publicar contenido '
+      'Vive es la comunidad digital de Vive Latam: contenidos, formación y equipo en un solo lugar. Al usarla aceptas publicar contenido '
           'propio o con permiso, respetar a las demás personas y no vender productos ni servicios '
           'fuera de los canales identificados. Podemos retirar contenido que incumpla las normas '
           'y suspender cuentas reincidentes; siempre se comunica el motivo y puedes apelar.',

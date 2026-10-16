@@ -56,15 +56,18 @@ final organizationProvider =
       OrganizationNotifier.new,
     );
 
-/// Color de marca de la organización activa (o el de Lujo Health por defecto).
+/// Color de marca de la organización activa (o el azul institucional de Vive por defecto).
 Color brandColor(Organization? org) {
   final hex = org?.primaryColor ?? '';
   if (hex.length == 7 && hex.startsWith('#')) {
     final value = int.tryParse(hex.substring(1), radix: 16);
     if (value != null) return Color(0xFF000000 | value);
   }
-  return const Color(0xFF2E7D5B);
+  return viveBlue;
 }
+
+/// Azul institucional de Vive Latam (#034CFF), tomado del logotipo oficial.
+const viveBlue = Color(0xFF034CFF);
 
 /// Módulo de la barra inferior: clave, nombre por defecto, icono y ruta raíz.
 class ShellModule {
@@ -83,15 +86,9 @@ class ShellModule {
   final String path;
 }
 
-/// Orden canónico de la barra (v2 §26 adaptado): Health TV, Trasciende, Comunidad, Mis notas, Recetas.
+/// Orden canónico de la barra (v2 §26 adaptado): Vive TV, Trasciende, Comunidad, Mis notas, Recetas.
 const shellModules = [
-  ShellModule(
-    'media',
-    'Health TV',
-    Icons.live_tv_outlined,
-    Icons.live_tv,
-    '/tv',
-  ),
+  ShellModule('media', 'Vive TV', Icons.live_tv_outlined, Icons.live_tv, '/tv'),
   ShellModule(
     'learning',
     'Trasciende',
